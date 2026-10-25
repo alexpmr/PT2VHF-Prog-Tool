@@ -44,4 +44,11 @@ WINEPATH='C:\mc\Library\bin;C:\mc' wine 'C:\mc\python.exe' -m PyInstaller \
 
 echo ">> NSIS"
 makensis -V2 -DVERSION="$VERSION" packaging/windows/installer.nsi
-echo "Pronto: dist/ProgramadorRadios-$VERSION-instalador.exe"
+echo ">> Versão portátil"
+PORT="dist/ProgramadorRadios-$VERSION-windows-portatil.zip"
+rm -rf "dist/Programador de Radios" "$PORT"
+cp -r dist/ProgramadorRadios "dist/Programador de Radios"
+cp LICENSE "dist/Programador de Radios/LICENCA.txt"
+(cd dist && zip -qr "../$PORT" "Programador de Radios")
+rm -rf "dist/Programador de Radios"
+echo "Pronto: dist/ProgramadorRadios-$VERSION-instalador.exe e $PORT"

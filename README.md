@@ -116,6 +116,15 @@ e também no Menu Iniciar. Não é preciso instalar Python.
   coloque os PNGs lá (veja a seção acima). Uma tabela de menus
   personalizada vai em `%USERPROFILE%\.ts2000prog\menus_ts2000.json`.
 
+### Pacotes para Linux e página de download
+
+`packaging/linux/build.sh` gera o `.deb` (Debian/Ubuntu/Mint, depende de
+`python3-tk` e `python3-serial`) e um `.tar.gz` para outras distribuições
+e macOS. `packaging/release.sh` roda os testes, gera todos os pacotes
+(Windows via Wine e Linux) e monta a página de download em `dist/site/`,
+com SHA-256 e o zip do código-fonte. O arquivo `dist/site.zip` é o que vai
+para a hospedagem.
+
 ### Como gerar o instalador
 
 O empacotamento usa PyInstaller (modo pasta) e NSIS. Os arquivos ficam em
@@ -219,9 +228,10 @@ Não houve teste com rádios reais. Limitações conhecidas:
 
 ### Licença
 
-Os layouts dos rádios Icom foram derivados do CHIRP, que é GPLv3. Por
-isso, se for publicar o código, a recomendação é usar a licença GPLv3 e
-citar o CHIRP.
+Este programa é software livre sob a **GNU GPL versão 3** (arquivo
+`LICENSE`). Os layouts dos rádios Icom foram derivados do CHIRP, também
+GPLv3. Ao distribuir os executáveis, distribua junto o código-fonte (a
+página de download gerada já inclui o zip do código).
 
 ## Testes
 

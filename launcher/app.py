@@ -49,20 +49,31 @@ class Card(tk.Frame):
 
 class Launcher(tk.Tk):
     def __init__(self):
-        super().__init__()
+        # className define o WM_CLASS no Linux (casa com o .desktop)
+        super().__init__(className="programador-radios")
         self.title("Programador de Rádios")
         self.geometry("820x520")
         self.minsize(640, 440)
         self.configure(bg=BG)
-        icon = find_asset("app.ico")
-        if icon and sys.platform == "win32":
-            try:
-                self.iconbitmap(default=icon)   # vale para todas as janelas
-            except tk.TclError:
-                pass
+        self._set_icon()
         self.windows: dict[str, tk.Toplevel] = {}
         self.page: tk.Frame | None = None
         self.show_home()
+
+    def _set_icon(self) -> None:
+        """Ícone de todas as janelas (.ico no Windows, PNG nos demais)."""
+        try:
+            if sys.platform == "win32":
+                icon = find_asset("app.ico")
+                if icon:
+                    self.iconbitmap(default=icon)
+            else:
+                png = find_asset("app.png")
+                if png:
+                    self._icon = tk.PhotoImage(file=png)
+                    self.iconphoto(True, self._icon)
+        except tk.TclError:
+            pass
 
     # ----------------------------------------------------------- páginas
     def _new_page(self, title: str, subtitle: str,
