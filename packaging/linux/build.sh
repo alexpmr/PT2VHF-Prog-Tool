@@ -89,12 +89,27 @@ cat > "$D/DEBIAN/postinst" <<'EOF'
 #!/bin/sh
 set -e
 if [ "$1" = "configure" ]; then
+  # restos da versão 1.1.0, que se chamava programador-radios
+  if [ -d /usr/lib/programador-radios ] && \
+     ! dpkg-query -W -f='${Status}' programador-radios 2>/dev/null \
+       | grep -q "ok installed"; then
+    rm -rf /usr/lib/programador-radios
+  fi
   echo "PT2VHF Prog Tool: para usar a porta serial, seu usuário precisa"
   echo "estar no grupo 'dialout':  sudo usermod -aG dialout \$USER  (e entre"
   echo "de novo na sessão)."
 fi
 EOF
 chmod 755 "$D/DEBIAN/postinst"
+
+# caches .pyc criados em tempo de execução não pertencem ao pacote
+cat > "$D/DEBIAN/prerm" <<'EOF'
+#!/bin/sh
+set -e
+find /usr/lib/pt2vhf-prog-tool -type d -name __pycache__ -prune \
+  -exec rm -rf {} + 2>/dev/null || true
+EOF
+chmod 755 "$D/DEBIAN/prerm"
 find "$D" -type d -exec chmod 755 {} +
 DEB="dist/${PKG}_${VERSION}_all.deb"
 dpkg-deb --root-owner-group -Zxz --build "$D" "$DEB" >/dev/null
