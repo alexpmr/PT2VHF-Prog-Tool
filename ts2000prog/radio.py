@@ -8,6 +8,7 @@ from typing import Callable, Iterable
 
 from . import protocol as P
 from .menus import MenuDef
+from .status import RadioStatus
 
 LogFn = Callable[[str, str], None]          # (direção, texto)
 ProgressFn = Callable[[int, int, str], None]  # (feito, total, mensagem)
@@ -212,6 +213,31 @@ class TS2000:
 
     def write_menu(self, ex: int, sub: int, value: str) -> None:
         self._require().set(P.cmd_write_menu(ex, sub, value))
+
+    # ------------------------------------------------------ tempo real
+    def read_status(self, st: RadioStatus, full: bool = False) -> None:
+        """Atualiza `st` com IF + S-meter; `full` lê também VFO B e extras."""
+        from .status import parse_freq, parse_if, parse_sm
+        link = self._require()
+        parse_if(link.query("IF;", "IF", retries=1), st)
+        st.smeter = parse_sm(link.query("SM0;", "SM0", retries=1))
+        st.connected = True
+        if not full:
+            return
+        for cmd, prefix, apply in (
+            ("FB;", "FB", lambda r: setattr(st, "freq_b", parse_freq(r))),
+            ("PC;", "PC", lambda r: setattr(st, "power", parse_freq(r))),
+            ("PA;", "PA", lambda r: setattr(st, "preamp", r[2:3] == "1")),
+            ("RA;", "RA", lambda r: setattr(
+                st, "att", r[2:4].strip("0;") != "")),
+            ("NB;", "NB", lambda r: setattr(st, "nb", r[2:3] == "1")),
+            ("NR;", "NR", lambda r: setattr(
+                st, "nr", int(r[2]) if r[2:3].isdigit() else 0)),
+        ):
+            try:
+                apply(link.query(cmd, prefix, retries=1))
+            except RadioError:
+                pass                    # comando opcional; ignora
 
     # ----------------------------------------------------- operações em lote
     @staticmethod

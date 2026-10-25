@@ -1,0 +1,6 @@
+Coloque aqui fotos/logotipos em PNG ou GIF para substituir os desenhos da
+tela inicial. Nomes reconhecidos:
+
+  kenwood.png    icom.png    ts2000.png    id51plus2.png    id880h.png
+
+As imagens são reduzidas automaticamente para caber nos botões.

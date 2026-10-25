@@ -137,3 +137,25 @@ class FileTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class StatusTests(unittest.TestCase):
+    def test_parse_if(self):
+        from ts2000prog.status import RadioStatus, parse_if
+        st = RadioStatus()
+        parse_if("IF00014195000     -0120" "1" "0" "012" "1" "2" "2" "0" "1"
+                 "1" "08" "2;", st)
+        self.assertEqual((st.freq, st.rit_offset, st.rit, st.channel, st.tx,
+                          st.mode, st.vfo, st.split, st.tone_mode, st.shift),
+                         (14_195_000, -120, True, 12, True, 2, 2, True, 1, 2))
+
+    def test_read_status_simulator(self):
+        from ts2000prog.status import RadioStatus
+        r = TS2000()
+        r.connect(SIMULATOR_PORT)
+        st = RadioStatus()
+        r.read_status(st, full=True)
+        r.disconnect()
+        self.assertTrue(st.connected)
+        self.assertEqual(st.freq_b, 145_500_000)
+        self.assertEqual(st.power, 100)

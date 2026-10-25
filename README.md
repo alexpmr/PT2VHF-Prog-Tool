@@ -1,8 +1,12 @@
-# Programador Kenwood TS-2000
+# Programador de Rádios — Kenwood TS-2000, Icom ID-51A Plus2 e ID-880H
 
-Aplicativo desktop (Python + Tkinter) para editar a programação do
-transceptor **Kenwood TS-2000 / TS-B2000 / TS-2000X**. Ele lê e grava o rádio
-pela porta serial usando os comandos CAT do TS-2000.
+Aplicativo desktop (Python + Tkinter) para programar rádios pela porta
+serial. A tela inicial mostra os fabricantes. Clicando em **Kenwood**
+aparece o TS-2000; clicando em **ICOM** aparecem o ID-51A Plus2 e o ID-880H.
+
+![Tela inicial](docs/inicio.png)
+
+## Kenwood TS-2000 (CAT, tempo real)
 
 - **Memórias 000-299**: frequência RX, split (freq./modo TX), modo, shift,
   offset, reverse, tom/CTCSS/DCS, passo, grupo, lockout e nome (8 caracteres).
@@ -13,12 +17,73 @@ pela porta serial usando os comandos CAT do TS-2000.
   ou **somente os alterados**. A gravação pode ser verificada com uma releitura.
 - **Varrer menus**: consulta EX000-EX099 (e, se você quiser, os sub-menus
   00-09) e mostra todos os menus que o rádio aceita, sem gravar nada.
+- **📟 Display em tempo real**: uma janela separada simula um LCD grande do
+  rádio (veja abaixo).
 - **Arquivos**: projeto `.ts2k` (JSON) e importação/exportação de memórias
   em CSV para usar em planilhas.
 - **Log CAT**: mostra todo o tráfego serial, útil para diagnóstico.
-- **Simulador**: escolha a porta `SIMULADOR` para testar o app sem o rádio.
 
 ![Memórias](docs/memorias.png)
+
+### Display em tempo real
+
+Conecte ao rádio e clique em **📟 Display** (ou **Rádio › Display em tempo
+real**). A janela consulta o rádio cerca de 5 vezes por segundo e mostra:
+
+- frequência principal em dígitos de 7 segmentos (até 10 Hz) e o modo;
+- RX/TX, VFO A/B ou canal de memória, SPLIT, RIT/XIT (com o offset), tipo
+  de tom e shift;
+- S-meter de 30 segmentos (vira medidor de potência PO durante a TX);
+- frequência do VFO B, potência ajustada, PRE, ATT, NB e NR.
+
+Clique com o botão direito no display para trocar o tema (âmbar como o do
+TS-2000, verde, azul noturno ou vermelho noturno) e para deixá-lo sempre no
+topo. F11 alterna a tela cheia, útil num segundo monitor. Durante uma
+leitura ou gravação, o display pausa para não disputar a serial.
+
+Comandos usados: `IF` (frequência, modo, RX/TX, VFO, canal, RIT/XIT,
+split, tom), `SM0` (S-meter), `FB`, `PC`, `PA`, `RA`, `NB` e `NR`.
+
+![Display](docs/display.png)
+![Display em TX, tema azul](docs/display_tx_azul.png)
+
+## Icom ID-51A Plus2 e ID-880H (clonagem)
+
+Esses rádios são programados por **clonagem**: o programa lê a memória
+inteira do rádio (a "imagem"), você edita no computador e grava a imagem
+de volta.
+
+- Edita frequência, duplex/offset, modo (FM, NFM, AM, NAM, DV), tom
+  (Tone, TSQL, DTCS, TSQL-R, DTCS-R), tons, DTCS e polaridade, passo, skip/
+  P.skip, banco (A-Z) e índice, nome (16 caracteres no ID-51 e 8 no ID-880)
+  e os campos D-STAR (UR, RPT1, RPT2, código digital e, no ID-51, o
+  silenciador digital DSQL/CSQL).
+- Também edita os nomes dos bancos, tem filtro, copiar/colar e exporta CSV.
+- Abre e salva arquivos **.icf**, o mesmo formato do software da Icom
+  (CS-51PLUS2 / CS-80/880) e do CHIRP.
+- **Todo o resto da imagem é preservado**: configurações que o programa não
+  edita voltam para o rádio exatamente como vieram.
+- Clonagem em alta velocidade (38400 bps) ou a 9600 bps, e funciona com
+  cabos que ecoam os dados.
+
+Por segurança, o botão **Clonar para o rádio** só fica liberado depois que
+você clona do rádio ou abre um `.icf` do mesmo modelo, porque a clonagem
+substitui a memória inteira. **Salve um backup `.icf` antes da primeira
+gravação.**
+
+Para clonar, ligue o cabo de clonagem/dados do rádio (por exemplo, o
+OPC-2218LU no ID-51; no ID-880H, o cabo de clonagem compatível com o rádio,
+conforme o manual), coloque o rádio em **modo de clonagem** pelo menu do
+próprio rádio e só então clique em clonar.
+
+![Editor Icom](docs/icom_editor.png)
+
+## Fotos dos rádios e logotipos
+
+Os logotipos e rádios da tela inicial são desenhos simples. Para usar
+fotos de verdade, coloque arquivos PNG na pasta `assets/` com estes
+nomes: `kenwood.png`, `icom.png`, `ts2000.png`, `id51plus2.png` e
+`id880h.png`. O programa reduz a imagem para caber no botão.
 
 ## Instalação
 
@@ -27,10 +92,14 @@ Windows e no macOS; no Linux instale `python3-tk`).
 
 ```bash
 pip install -r requirements.txt     # pyserial
-python main.py                      # ou: python -m ts2000prog
+python main.py                      # tela inicial
+python -m ts2000prog                # abre direto o TS-2000
 ```
 
-## Conexão com o rádio
+Em qualquer editor, escolha a porta `SIMULADOR` para testar sem rádio. O
+TS-2000 simulado tem frequência, S-meter e TX variando para o display.
+
+## Conexão com o TS-2000
 
 1. Use um cabo serial **direto** (não null-modem) DB-9 entre o PC e a porta
    COM do TS-2000. Um adaptador USB-serial com FTDI ou Prolific funciona bem.
@@ -43,7 +112,7 @@ python main.py                      # ou: python -m ts2000prog
    (TS-2000) e desliga o Auto-Information (`AI0`) durante a sessão. O estado
    anterior do AI é restaurado ao desconectar.
 
-## Fluxo de trabalho
+## Fluxo de trabalho no TS-2000
 
 1. **⬇ Ler do rádio** baixa as 300 memórias e os menus (leva cerca de
    20-40 s a 9600 bps).
@@ -57,7 +126,7 @@ python main.py                      # ou: python -m ts2000prog
 Quando você abre um projeto salvo, todos os itens ficam marcados como
 alterados. Assim, "Gravar no rádio" restaura o projeto inteiro.
 
-## Protocolo utilizado
+## Protocolo do TS-2000
 
 | Função | Comando |
 |---|---|
@@ -74,7 +143,7 @@ Hamlib (`rigs/kenwood/ts2000.c`) e do CHIRP (`drivers/ts2000.py`). Depois de
 cada gravação, o app envia `ID;` para sincronizar e detectar respostas de
 erro (`?;`, `E;`, `O;`). Ele tenta de novo automaticamente até 3 vezes.
 
-## ⚠️ Sobre a tabela de menus
+## ⚠️ Sobre a tabela de menus do TS-2000
 
 Os índices `EX` dos menus 12, 13, 20, 21, 22 e 31 foram confirmados em
 software de terceiros (Hamlib e flrig) e aparecem com ✓. Os demais seguem a
@@ -95,24 +164,64 @@ edite o JSON (nomes, `ex`, `sub` e `options`) e salve como
 Recomendação: antes de gravar menus pela primeira vez, faça **Ler do rádio**
 e salve o projeto como backup.
 
+## Como os formatos Icom foram verificados
+
+Os mapas de memória e o protocolo de clonagem seguem os drivers do CHIRP
+(`icf.py`, `id31.py`, `id51plus.py` e `id880.py`). Para conferir, o
+programa foi testado contra o próprio código do CHIRP:
+
+- 220 memórias aleatórias por modelo, gravadas por este programa e lidas
+  pelo CHIRP, e o contrário, sem nenhuma divergência;
+- quadros de dados idênticos aos do CHIRP;
+- arquivos `.icf` idênticos byte a byte, incluindo o hash `#CD`.
+
+Não houve teste com rádios reais. Limitações conhecidas:
+
+- No ID-880H, o CHIRP grava um "flag de nome" num endereço que se sobrepõe
+  às memórias. Por isso, este programa não grava esse flag. Os nomes são
+  gravados normalmente, mas se algum não aparecer no rádio, me avise.
+- Os códigos de tom 2/3 (TSQL) e 4/5 (DTCS) aparecem separados porque o
+  rádio guarda as duas variantes. Novos canais usam o mesmo código que o
+  CHIRP usa.
+- Listas de indicativos D-STAR (MYCALL/URCALL/repetidoras) e as demais
+  configurações não são editadas, mas são preservadas.
+
+### Licença
+
+Os layouts dos rádios Icom foram derivados do CHIRP, que é GPLv3. Por
+isso, se for publicar o código, a recomendação é usar a licença GPLv3 e
+citar o CHIRP.
+
 ## Testes
 
 ```bash
 python -m unittest discover -s tests -v
 ```
 
-Os testes cobrem a codificação e decodificação dos comandos, o ciclo
-completo de leitura/gravação/verificação contra o rádio simulado, a varredura
-de menus, o cancelamento e os arquivos de projeto/CSV.
+Os testes cobrem: comandos do TS-2000 e o ciclo de leitura/gravação contra
+o rádio simulado, a varredura de menus, o display (`IF`/`SM`), os arquivos
+de projeto/CSV, o codec das memórias Icom (incluindo a preservação de bits
+desconhecidos), a clonagem nos dois sentidos com e sem cabo de eco, a
+rejeição de modelo errado e os arquivos `.icf`.
 
 ## Estrutura
 
 ```
-main.py                 ponto de entrada
-ts2000prog/protocol.py  tabelas (modos, tons, DCS, passos) e formato MR/MW/EX
-ts2000prog/radio.py     comunicação serial, download/upload, varredura
-ts2000prog/menus.py     definições dos menus (substituíveis por JSON)
-ts2000prog/fileio.py    projeto .ts2k e CSV
-ts2000prog/simulator.py rádio simulado para testes
-ts2000prog/gui.py       interface Tkinter
+main.py                   tela inicial
+launcher/app.py           páginas: fabricantes -> modelos
+launcher/art.py           desenhos dos logotipos/rádios (ou assets/*.png)
+ts2000prog/protocol.py    tabelas e formato MR/MW/EX
+ts2000prog/radio.py       comunicação CAT, download/upload, varredura, status
+ts2000prog/status.py      decodificação do IF/SM para o display
+ts2000prog/lcd.py         display LCD em tempo real
+ts2000prog/menus.py       definições dos menus (substituíveis por JSON)
+ts2000prog/fileio.py      projeto .ts2k e CSV
+ts2000prog/simulator.py   TS-2000 simulado
+ts2000prog/gui.py         programador do TS-2000
+icomprog/models.py        mapas de memória ID-51A Plus2 / ID-880H
+icomprog/clone.py         protocolo de clonagem Icom
+icomprog/icf.py           arquivos .icf
+icomprog/simulator.py     rádio Icom simulado
+icomprog/gui.py           editor de memórias Icom
+common/tkthreads.py       ajuste do tkinter para uso com threads
 ```

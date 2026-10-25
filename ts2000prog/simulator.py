@@ -5,7 +5,9 @@ Permite testar o programa sem o rádio (porta "SIMULADOR").
 
 from __future__ import annotations
 
+import random
 import threading
+import time
 
 from . import protocol as P
 from .menus import load_menu_defs
@@ -26,6 +28,12 @@ class SimulatedRadio:
             self.menus[d.key] = next(iter(d.options), "0") \
                 if d.options else "0"
         self._seed()
+        # estado "ao vivo" para o display
+        self.freq_a = 14_195_000
+        self.freq_b = 145_500_000
+        self.mode = 2
+        self.s = 8
+        self.t0 = time.monotonic()
 
     def _seed(self) -> None:
         demo = [
@@ -69,6 +77,20 @@ class SimulatedRadio:
     def close(self) -> None:
         pass
 
+    # ------------------------------------------------------- estado ao vivo
+    def _phase(self) -> str:
+        """Ciclo de 20 s: sintonizando, ouvindo, transmitindo."""
+        t = (time.monotonic() - self.t0) % 20
+        return "tune" if t < 3 else ("tx" if 14 < t < 18 else "rx")
+
+    def _if_reply(self) -> str:
+        phase = self._phase()
+        if phase == "tune":
+            self.freq_a += 50
+        tx = "1" if phase == "tx" else "0"
+        return (f"IF{self.freq_a:011d}00000+0120" "1" "0" "005"
+                f"{tx}{self.mode}0" "0" "0" "0" "08" "0")
+
     # ------------------------------------------------------- interpretador
     def _reply(self, s: str) -> None:
         self._out += (s + ";").encode("ascii")
@@ -101,6 +123,33 @@ class SimulatedRadio:
                 self.mem[(1, num)] = body   # rádio copia RX para TX
             else:
                 self.mem[(1, num)] = body
+        elif cmd == "IF":
+            self._reply(self._if_reply())
+        elif cmd == "SM0":
+            t = self._phase()
+            if t == "tx":
+                self.s = random.randint(18, 26)
+            else:
+                self.s = max(0, min(30, self.s + random.randint(-3, 3)))
+            self._reply(f"SM0{self.s:04d}")
+        elif c in ("FA", "FB"):
+            if len(cmd) == 2:
+                f = self.freq_a if c == "FA" else self.freq_b
+                self._reply(f"{c}{f:011d}")
+            elif c == "FA":
+                self.freq_a = int(cmd[2:])
+            else:
+                self.freq_b = int(cmd[2:])
+        elif cmd == "PC":
+            self._reply("PC100")
+        elif cmd == "PA":
+            self._reply("PA10")
+        elif cmd == "RA":
+            self._reply("RA00")
+        elif cmd == "NB":
+            self._reply("NB0")
+        elif cmd == "NR":
+            self._reply("NR1")
         elif c == "EX" and len(cmd) >= 9:
             key = cmd[2:7]
             if key not in self.menus or key in self.reject_menus:

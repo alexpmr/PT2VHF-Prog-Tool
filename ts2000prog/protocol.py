@@ -27,7 +27,7 @@ CHIRP chirp/drivers/ts2000.py):
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field, asdict
+from dataclasses import dataclass, asdict
 
 NUM_MEMORIES = 300          # 000-299
 FIRST_PROGRAM_SCAN = 290    # 290-299 = limites de varredura programada

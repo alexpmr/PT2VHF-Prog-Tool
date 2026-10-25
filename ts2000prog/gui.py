@@ -2,18 +2,24 @@
 
 from __future__ import annotations
 
+import dataclasses
 import os
 import queue
 import threading
+import time
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
+
+import common.tkthreads  # noqa: F401
 
 from . import __version__
 from . import protocol as P
 from .fileio import (Codeplug, export_csv, import_csv, load_project,
                      save_project)
+from .lcd import DisplayWindow
 from .menus import MenuDef, load_menu_defs, save_menu_defs
 from .radio import (BAUD_RATES, TS2000, Cancelled, RadioError, list_ports)
+from .status import RadioStatus
 
 APP_TITLE = "Programador Kenwood TS-2000"
 FILE_TYPES = [("Projeto TS-2000", "*.ts2k"), ("Todos", "*.*")]
@@ -235,7 +241,7 @@ class MenuValueDialog(tk.Toplevel):
 
 # ===================================================================== app
 
-class App(tk.Tk):
+class App(tk.Toplevel):
     MEM_COLS = [
         ("ch", "Canal", 52), ("name", "Nome", 80), ("rx", "RX MHz", 95),
         ("mode", "Modo", 55), ("tx", "TX/Fim MHz", 95), ("shift", "Shift", 55),
@@ -244,8 +250,8 @@ class App(tk.Tk):
         ("step", "Passo", 50), ("grp", "Grp", 35), ("lock", "Lock", 40),
     ]
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, master=None):
+        super().__init__(master)
         self.title(APP_TITLE)
         self.geometry("1240x700")
         self.minsize(900, 500)
@@ -262,6 +268,9 @@ class App(tk.Tk):
         self.radio = TS2000(log=lambda d, t: self.q.put(("log", d, t)))
         self.worker: threading.Thread | None = None
         self.cancel_ev = threading.Event()
+        self.display: DisplayWindow | None = None
+        self.monitor_stop = threading.Event()
+        self.monitor_thread: threading.Thread | None = None
 
         self._build_menu()
         self._build_toolbar()
@@ -306,6 +315,8 @@ class App(tk.Tk):
                       command=lambda: self.upload(True, False))
         r.add_command(label="Gravar somente menus",
                       command=lambda: self.upload(False, True))
+        r.add_separator()
+        r.add_command(label="Display em tempo real", command=self.open_display)
         mb.add_cascade(label="Rádio", menu=r)
 
         mm = tk.Menu(mb, tearoff=False)
@@ -321,9 +332,9 @@ class App(tk.Tk):
         h.add_command(label="Sobre", command=self.about)
         mb.add_cascade(label="Ajuda", menu=h)
         self.config(menu=mb)
-        self.bind_all("<Control-n>", lambda e: self.file_new())
-        self.bind_all("<Control-o>", lambda e: self.file_open())
-        self.bind_all("<Control-s>", lambda e: self.file_save())
+        self.bind("<Control-n>", lambda e: self.file_new())
+        self.bind("<Control-o>", lambda e: self.file_open())
+        self.bind("<Control-s>", lambda e: self.file_save())
 
     def _build_toolbar(self) -> None:
         tb = ttk.Frame(self, padding=(8, 6))
@@ -363,6 +374,10 @@ class App(tk.Tk):
         self.v_verify = tk.BooleanVar(value=False)
         ttk.Checkbutton(tb, text="Verificar gravação",
                         variable=self.v_verify).pack(side="left")
+        ttk.Separator(tb, orient="vertical").pack(side="left", fill="y",
+                                                  padx=8)
+        ttk.Button(tb, text="📟 Display", command=self.open_display).pack(
+            side="left")
         self.refresh_ports()
 
     def _build_tabs(self) -> None:
@@ -595,6 +610,9 @@ class App(tk.Tk):
                     self.pb["maximum"] = max(total, 1)
                     self.pb["value"] = done
                     self.v_status.set(text)
+                elif kind == "status":
+                    if self.display:
+                        self.display.update_status(msg[1])
                 elif kind == "done":
                     callback, result, error = msg[1:]
                     self._finish_task(callback, result, error)
@@ -605,7 +623,7 @@ class App(tk.Tk):
     # ----------------------------------------------------- tarefas em thread
     def _busy(self) -> bool:
         if self.worker and self.worker.is_alive():
-            messagebox.showinfo(APP_TITLE, "Aguarde a operação em andamento.")
+            messagebox.showinfo(APP_TITLE, "Aguarde a operação em andamento.", parent=self)
             return True
         return False
 
@@ -613,7 +631,7 @@ class App(tk.Tk):
         if self._busy():
             return
         if need_radio and not self.radio.connected:
-            messagebox.showwarning(APP_TITLE, "Conecte-se ao rádio primeiro.")
+            messagebox.showwarning(APP_TITLE, "Conecte-se ao rádio primeiro.", parent=self)
             return
         self.cancel_ev.clear()
         self.btn_cancel.configure(state="normal")
@@ -642,7 +660,7 @@ class App(tk.Tk):
         if error is not None:
             self.v_status.set(f"Erro: {error}")
             self._log("ERRO", str(error))
-            messagebox.showerror(APP_TITLE, str(error))
+            messagebox.showerror(APP_TITLE, str(error), parent=self)
             return
         callback(result)
 
@@ -659,7 +677,7 @@ class App(tk.Tk):
         shown = "\n".join(errors[:15])
         if len(errors) > 15:
             shown += f"\n... e mais {len(errors) - 15} (veja o Log CAT)"
-        messagebox.showwarning(title, shown)
+        messagebox.showwarning(title, shown, parent=self)
 
     # ----------------------------------------------------------- conexão
     def refresh_ports(self) -> None:
@@ -672,14 +690,16 @@ class App(tk.Tk):
         if self._busy():
             return
         if self.radio.connected:
+            self.stop_monitor()
             self.radio.disconnect()
+            self._push_status(RadioStatus())
             self.btn_conn.configure(text="Conectar")
             self.v_status.set("Desconectado")
             self._log("INFO", "Desconectado")
             return
         port = self.v_port.get().strip()
         if not port:
-            messagebox.showwarning(APP_TITLE, "Selecione a porta serial.")
+            messagebox.showwarning(APP_TITLE, "Selecione a porta serial.", parent=self)
             return
         baud, rtscts, stop = (int(self.v_baud.get()), self.v_rtscts.get(),
                               int(self.v_stop.get()))
@@ -693,6 +713,8 @@ class App(tk.Tk):
             self.v_status.set(f"Conectado: TS-2000 ({rid}) em {port}")
             self.pb["value"] = 0
             self._log("INFO", f"Conectado em {port} @ {baud}")
+            if self.display:
+                self.start_monitor()
 
         self.run_task(task, done, need_radio=False)
 
@@ -750,14 +772,14 @@ class App(tk.Tk):
         if not numbers and not keys:
             messagebox.showinfo(APP_TITLE, "Nada para gravar." + (
                 " (Somente alterados está marcado e não há alterações.)"
-                if only else ""))
+                if only else ""), parent=self)
             return
         n_erase = sum(1 for n in numbers if self.cp.memories[n].empty)
         msg = (f"Gravar no rádio {len(numbers)} canal(is) e {len(keys)} "
                f"menu(s)?")
         if n_erase:
             msg += f"\n\nAtenção: {n_erase} canal(is) vazio(s) serão APAGADOS."
-        if not messagebox.askyesno("Confirmar gravação", msg):
+        if not messagebox.askyesno("Confirmar gravação", msg, parent=self):
             return
         mems = [self.cp.memories[n] for n in numbers]
         defs_by_key = {d.key: d for d in self._all_defs()}
@@ -789,14 +811,14 @@ class App(tk.Tk):
 
     def scan_menus(self) -> None:
         if not self.radio.connected:
-            messagebox.showwarning(APP_TITLE, "Conecte-se ao rádio primeiro.")
+            messagebox.showwarning(APP_TITLE, "Conecte-se ao rádio primeiro.", parent=self)
             return
         deep = messagebox.askyesnocancel(
             "Varrer menus",
             "Consulta EX000-EX099 e registra os menus que o rádio responder.\n"
             "Nada é gravado no rádio.\n\n"
             "Sim = incluir sub-menus 00-09 (mais lento)\n"
-            "Não = apenas sub-menu 00")
+            "Não = apenas sub-menu 00", parent=self)
         if deep is None:
             return
         subs = range(10) if deep else range(1)
@@ -813,7 +835,7 @@ class App(tk.Tk):
             self._set_modified()
             self._log("INFO", f"Varredura: {len(found)} menus responderam; "
                       f"{len(new)} novos")
-            messagebox.showinfo(APP_TITLE, f"{len(found)} menus responderam.")
+            messagebox.showinfo(APP_TITLE, f"{len(found)} menus responderam.", parent=self)
 
         self.run_task(task, done)
 
@@ -839,7 +861,7 @@ class App(tk.Tk):
         if not nums:
             return
         if not messagebox.askyesno(APP_TITLE,
-                                   f"Apagar {len(nums)} canal(is)?"):
+                                   f"Apagar {len(nums)} canal(is)?", parent=self):
             return
         for n in nums:
             self.cp.memories[n] = P.Memory(number=n)
@@ -858,12 +880,12 @@ class App(tk.Tk):
             return
         start = nums[0]
         if start + len(self.clipboard) > P.NUM_MEMORIES:
-            messagebox.showerror(APP_TITLE, "Não cabe a partir deste canal.")
+            messagebox.showerror(APP_TITLE, "Não cabe a partir deste canal.", parent=self)
             return
         targets = range(start, start + len(self.clipboard))
         if any(not self.cp.memories[t].empty for t in targets) and \
                 not messagebox.askyesno(APP_TITLE,
-                                        "Sobrescrever canais existentes?"):
+                                        "Sobrescrever canais existentes?", parent=self):
             return
         for src, t in zip(self.clipboard, targets):
             self.cp.memories[t] = src.copy_to(t)
@@ -924,7 +946,7 @@ class App(tk.Tk):
         try:
             self.defs, self.defs_src = load_menu_defs(path)
         except (OSError, ValueError, KeyError) as e:
-            messagebox.showerror(APP_TITLE, f"Arquivo inválido: {e}")
+            messagebox.showerror(APP_TITLE, f"Arquivo inválido: {e}", parent=self)
             return
         self.refresh_menus()
         self._log("INFO", f"Definições de menu: {path}")
@@ -934,7 +956,7 @@ class App(tk.Tk):
         if not self.modified:
             return True
         ans = messagebox.askyesnocancel(APP_TITLE,
-                                        "Salvar as alterações do projeto?")
+                                        "Salvar as alterações do projeto?", parent=self)
         if ans is None:
             return False
         return self.file_save() if ans else True
@@ -958,7 +980,7 @@ class App(tk.Tk):
         try:
             self.cp = load_project(path)
         except (OSError, ValueError, KeyError, TypeError) as e:
-            messagebox.showerror(APP_TITLE, f"Não foi possível abrir: {e}")
+            messagebox.showerror(APP_TITLE, f"Não foi possível abrir: {e}", parent=self)
             return
         self.path = path
         # tudo o que veio do arquivo é considerado "alterado" em relação
@@ -975,7 +997,7 @@ class App(tk.Tk):
         try:
             save_project(self.cp, self.path)
         except OSError as e:
-            messagebox.showerror(APP_TITLE, f"Erro ao salvar: {e}")
+            messagebox.showerror(APP_TITLE, f"Erro ao salvar: {e}", parent=self)
             return False
         self._set_modified(False)
         self.v_status.set(f"Salvo em {self.path}")
@@ -996,7 +1018,7 @@ class App(tk.Tk):
         try:
             mems, errs = import_csv(path)
         except OSError as e:
-            messagebox.showerror(APP_TITLE, str(e))
+            messagebox.showerror(APP_TITLE, str(e), parent=self)
             return
         for m in mems:
             self.cp.memories[m.number] = m
@@ -1013,6 +1035,54 @@ class App(tk.Tk):
             n = export_csv(self.cp, path)
             self.v_status.set(f"{n} canais exportados para {path}")
 
+    # -------------------------------------------------- display tempo real
+    def open_display(self) -> None:
+        if self.display:
+            self.display.deiconify()
+            self.display.lift()
+            return
+        self.display = DisplayWindow(self, on_close=self._display_closed)
+        if self.radio.connected:
+            self.start_monitor()
+
+    def _display_closed(self) -> None:
+        self.stop_monitor()
+        self.display = None
+
+    def _push_status(self, st: RadioStatus) -> None:
+        self.q.put(("status", dataclasses.replace(st)))
+
+    def start_monitor(self) -> None:
+        if self.monitor_thread and self.monitor_thread.is_alive():
+            return
+        self.monitor_stop.clear()
+        st = RadioStatus()
+
+        def loop():
+            n = 0
+            while not self.monitor_stop.is_set():
+                busy = self.worker is not None and self.worker.is_alive()
+                if busy or not self.radio.connected:
+                    time.sleep(0.3)     # leitura/gravação tem prioridade
+                    continue
+                try:
+                    self.radio.read_status(st, full=(n % 10 == 0))
+                    self._push_status(st)
+                except (RadioError, ValueError, OSError) as e:
+                    self.q.put(("log", "ERRO", f"Display: {e}"))
+                    time.sleep(1)
+                n += 1
+                self.monitor_stop.wait(0.15)
+
+        self.monitor_thread = threading.Thread(target=loop, daemon=True)
+        self.monitor_thread.start()
+
+    def stop_monitor(self) -> None:
+        self.monitor_stop.set()
+        if self.monitor_thread:
+            self.monitor_thread.join(timeout=2)
+            self.monitor_thread = None
+
     # -------------------------------------------------------------- misc
     def about(self) -> None:
         messagebox.showinfo(
@@ -1020,16 +1090,20 @@ class App(tk.Tk):
             f"{APP_TITLE} v{__version__}\n\n"
             "Edita memórias (000-299) e menus do Kenwood TS-2000 e "
             "transfere pela porta serial (CAT).\n\n"
-            "Comandos: MR/MW (memórias), EX (menus), ID, AI.")
+            "Comandos: MR/MW (memórias), EX (menus), ID, AI.", parent=self)
 
     def on_close(self) -> None:
         if self.worker and self.worker.is_alive():
             if not messagebox.askyesno(APP_TITLE,
-                                       "Operação em andamento. Sair mesmo?"):
+                                       "Operação em andamento. Sair mesmo?", parent=self):
                 return
             self.cancel_ev.set()
         if not self._confirm_discard():
             return
+        self.stop_monitor()
+        if self.display:
+            self.display.destroy()
+            self.display = None
         try:
             self.radio.disconnect()
         except Exception:
@@ -1038,8 +1112,12 @@ class App(tk.Tk):
 
 
 def main() -> None:
-    app = App()
-    app.mainloop()
+    root = tk.Tk()
+    root.withdraw()
+    app = App(root)
+    app.bind("<Destroy>", lambda e: root.destroy() if e.widget is app
+             else None)
+    root.mainloop()
 
 
 if __name__ == "__main__":

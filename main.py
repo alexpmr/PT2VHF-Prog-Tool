@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Inicia o Programador Kenwood TS-2000."""
+"""Inicia o Programador de Rádios (tela inicial com Kenwood e ICOM)."""
 
-from ts2000prog.gui import main
+from launcher.app import main
 
 if __name__ == "__main__":
     main()
