@@ -17,7 +17,7 @@ aparece o TS-2000; clicando em **ICOM** aparecem o ID-51A Plus2 e o ID-880H.
   ou **somente os alterados**. A gravação pode ser verificada com uma releitura.
 - **Varrer menus**: consulta EX000-EX099 (e, se você quiser, os sub-menus
   00-09) e mostra todos os menus que o rádio aceita, sem gravar nada.
-- **📟 Display em tempo real**: uma janela separada simula um LCD grande do
+- **Display em tempo real** (botão Display LCD): uma janela separada simula um LCD grande do
   rádio (veja abaixo).
 - **Arquivos**: projeto `.ts2k` (JSON) e importação/exportação de memórias
   em CSV para usar em planilhas.
@@ -27,7 +27,7 @@ aparece o TS-2000; clicando em **ICOM** aparecem o ID-51A Plus2 e o ID-880H.
 
 ### Display em tempo real
 
-Conecte ao rádio e clique em **📟 Display** (ou **Rádio › Display em tempo
+Conecte ao rádio e clique em **Display LCD** (ou **Rádio › Display em tempo
 real**). A janela consulta o rádio cerca de 5 vezes por segundo e mostra:
 
 - frequência principal em dígitos de 7 segmentos (até 10 Hz) e o modo;
@@ -98,6 +98,37 @@ python -m ts2000prog                # abre direto o TS-2000
 
 Em qualquer editor, escolha a porta `SIMULADOR` para testar sem rádio. O
 TS-2000 simulado tem frequência, S-meter e TX variando para o display.
+
+## Instalador para Windows
+
+O arquivo `ProgramadorRadios-<versão>-instalador.exe` instala o programa no
+Windows 10/11 de 64 bits. Ele cria atalhos no Menu Iniciar e, se você
+quiser, no desktop. A desinstalação fica em **Configurações › Aplicativos**
+e também no Menu Iniciar. Não é preciso instalar Python.
+
+- O instalador não tem assinatura digital. Por isso o Windows SmartScreen
+  pode mostrar "O Windows protegeu o computador": clique em **Mais
+  informações › Executar assim mesmo**.
+- Para o cabo USB-serial, instale o driver do fabricante (FTDI, Prolific,
+  Silicon Labs ou o driver do cabo Icom). A porta COM aparece na lista
+  **Porta** do programa.
+- Fotos dos rádios: crie a pasta `%USERPROFILE%\.ts2000prog\assets` e
+  coloque os PNGs lá (veja a seção acima). Uma tabela de menus
+  personalizada vai em `%USERPROFILE%\.ts2000prog\menus_ts2000.json`.
+
+### Como gerar o instalador
+
+O empacotamento usa PyInstaller (modo pasta) e NSIS. Os arquivos ficam em
+`packaging/windows/`.
+
+| Onde | Comando |
+|---|---|
+| Windows (Python 3.12 do python.org + NSIS 3) | `packaging\windows\build.bat` |
+| Linux, via Wine | `packaging/windows/build_wine.sh` |
+| GitHub Actions | workflow **Instalador Windows** (manual, ou ao criar uma tag `v*`); o instalador sai como artefato |
+
+Para mudar a versão, altere `__version__` em `launcher/__init__.py`. O
+ícone é gerado por `packaging/windows/make_icon.py` (requer Pillow).
 
 ## Conexão com o TS-2000
 
@@ -224,4 +255,6 @@ icomprog/icf.py           arquivos .icf
 icomprog/simulator.py     rádio Icom simulado
 icomprog/gui.py           editor de memórias Icom
 common/tkthreads.py       ajuste do tkinter para uso com threads
+common/ui.py              fonte padrão (Arial no Windows)
+packaging/windows/        spec do PyInstaller, instalador NSIS, scripts
 ```

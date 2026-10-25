@@ -1,23 +1,40 @@
 """Ilustrações da tela inicial (logotipos e rádios), desenhadas em Canvas.
 
-Se existir um arquivo com o mesmo nome em `assets/` (PNG ou GIF), ele é
-usado no lugar do desenho: kenwood.png, icom.png, ts2000.png,
+Se existir um arquivo com o mesmo nome numa pasta `assets` (PNG ou GIF),
+ele é usado no lugar do desenho: kenwood.png, icom.png, ts2000.png,
 id51plus2.png e id880h.png. Assim é possível colocar fotos reais dos rádios.
+Pastas procuradas, nesta ordem: ~/.ts2000prog/assets, a pasta do executável
+(versão instalada) e a pasta assets do código-fonte.
 """
 
 from __future__ import annotations
 
 import os
+import sys
 import tkinter as tk
 
-ASSETS = os.path.join(os.path.dirname(os.path.dirname(
-    os.path.abspath(__file__))), "assets")
+from common.ui import UI_FONT
+
+ASSET_DIRS = [
+    os.path.join(os.path.expanduser("~"), ".ts2000prog", "assets"),
+    os.path.join(os.path.dirname(os.path.abspath(sys.executable)), "assets"),
+    os.path.join(os.path.dirname(os.path.dirname(
+        os.path.abspath(__file__))), "assets"),
+]
+
+
+def find_asset(filename: str) -> str | None:
+    for d in ASSET_DIRS:
+        path = os.path.join(d, filename)
+        if os.path.isfile(path):
+            return path
+    return None
 
 
 def load_asset(name: str, max_w: int, max_h: int) -> tk.PhotoImage | None:
     for ext in (".png", ".gif"):
-        path = os.path.join(ASSETS, name + ext)
-        if os.path.isfile(path):
+        path = find_asset(name + ext)
+        if path:
             try:
                 img = tk.PhotoImage(file=path)
             except tk.TclError:
@@ -38,7 +55,7 @@ def _rrect(c: tk.Canvas, x0, y0, x1, y1, r, **kw):
 def draw_kenwood(c: tk.Canvas, w: int, h: int) -> None:
     _rrect(c, 6, 6, w - 6, h - 6, 14, fill="#111111", outline="")
     c.create_text(w / 2, h / 2 - 4, text="KENWOOD", fill="#ffffff",
-                  font=("Helvetica", int(min(h * 0.26, w * 0.085)), "bold"))
+                  font=(UI_FONT, int(min(h * 0.26, w * 0.085)), "bold"))
     c.create_rectangle(w * 0.22, h * 0.72, w * 0.78, h * 0.72 + 3,
                        fill="#d4282e", outline="")
 
@@ -47,7 +64,7 @@ def draw_icom(c: tk.Canvas, w: int, h: int) -> None:
     _rrect(c, 6, 6, w - 6, h - 6, 14, fill="#ffffff", outline="#1d4f91",
            width=3)
     c.create_text(w / 2, h / 2, text="ICOM", fill="#1d4f91",
-                  font=("Helvetica", int(h * 0.34), "bold italic"))
+                  font=(UI_FONT, int(h * 0.34), "bold italic"))
 
 
 # --------------------------------------------------------------- rádios
@@ -95,7 +112,7 @@ def draw_ts2000(c: tk.Canvas, w: int, h: int) -> None:
                       x0 + pw * kx + k, y0 + ph * 0.72 + k, fill="#222",
                       outline="#666")
     c.create_text(x0 + pw * 0.12, y0 + ph * 0.90, text="TS-2000",
-                  fill="#d9dce1", font=("Helvetica", max(int(ph * 0.09), 6),
+                  fill="#d9dce1", font=(UI_FONT, max(int(ph * 0.09), 6),
                                         "bold"))
 
 
@@ -121,7 +138,7 @@ def draw_id51(c: tk.Canvas, w: int, h: int) -> None:
             c.create_rectangle(kx, ky, kx + bw * 0.2, ky + bh * 0.08,
                                fill="#8d939b", outline="")
     c.create_text(x0 + bw / 2, y0 + bh * 0.95, text="ICOM", fill="#9ec1ea",
-                  font=("Helvetica", max(int(bh * 0.06), 6), "bold"))
+                  font=(UI_FONT, max(int(bh * 0.06), 6), "bold"))
 
 
 def draw_id880(c: tk.Canvas, w: int, h: int) -> None:

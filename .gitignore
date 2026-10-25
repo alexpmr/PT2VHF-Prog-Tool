@@ -3,3 +3,4 @@ __pycache__/
 *.ts2k
 *.icf
 dist/
+build/

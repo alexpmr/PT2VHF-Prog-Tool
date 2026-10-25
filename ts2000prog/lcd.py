@@ -9,6 +9,8 @@ from __future__ import annotations
 
 import tkinter as tk
 
+from common.ui import UI_FONT
+
 from .status import RadioStatus
 
 THEMES = {
@@ -105,7 +107,7 @@ class LcdCanvas(tk.Canvas):
               color=None):
         fill = color or (self.t["on"] if lit else self.t["off"])
         self.create_text(*self._xy(x, y), text=text, anchor=anchor,
-                         fill=fill, font=("Helvetica", max(int(size * self.k),
+                         fill=fill, font=(UI_FONT, max(int(size * self.k),
                                                            6),
                                           "bold" if bold else "normal"))
 

@@ -376,7 +376,7 @@ class App(tk.Toplevel):
                         variable=self.v_verify).pack(side="left")
         ttk.Separator(tb, orient="vertical").pack(side="left", fill="y",
                                                   padx=8)
-        ttk.Button(tb, text="📟 Display", command=self.open_display).pack(
+        ttk.Button(tb, text="Display LCD", command=self.open_display).pack(
             side="left")
         self.refresh_ports()
 

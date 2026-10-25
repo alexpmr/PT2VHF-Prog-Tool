@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import json
 import os
+import sys
 from dataclasses import dataclass, field
 
 from .protocol import menu_key
@@ -131,6 +132,8 @@ def _search_paths() -> list[str]:
     return [
         os.path.join(os.getcwd(), "menus_ts2000.json"),
         os.path.join(os.path.dirname(here), "menus_ts2000.json"),
+        os.path.join(os.path.dirname(os.path.abspath(sys.executable)),
+                     "menus_ts2000.json"),
         os.path.join(os.path.expanduser("~"), ".ts2000prog",
                      "menus_ts2000.json"),
     ]

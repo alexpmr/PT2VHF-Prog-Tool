@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
+import sys
 import tkinter as tk
 from tkinter import ttk
 
-from .art import Picture
+from common.ui import UI_FONT
+
+from .art import Picture, find_asset
 
 BG = "#eef1f5"
 CARD = "#ffffff"
@@ -25,10 +28,10 @@ class Card(tk.Frame):
         self.pic = Picture(self, picture, *pic_size, bg=CARD)
         self.pic.pack()
         self.lbl = tk.Label(self, text=title, bg=CARD, fg=TEXT,
-                            font=("Helvetica", 14, "bold"))
+                            font=(UI_FONT, 14, "bold"))
         self.lbl.pack(pady=(8, 0))
         self.sub = tk.Label(self, text=subtitle, bg=CARD, fg=MUTED,
-                            font=("Helvetica", 10), wraplength=pic_size[0])
+                            font=(UI_FONT, 10), wraplength=pic_size[0])
         self.sub.pack()
         for w in (self, self.pic, self.lbl, self.sub):
             w.bind("<Button-1>", lambda e: self.command())
@@ -51,6 +54,12 @@ class Launcher(tk.Tk):
         self.geometry("820x520")
         self.minsize(640, 440)
         self.configure(bg=BG)
+        icon = find_asset("app.ico")
+        if icon and sys.platform == "win32":
+            try:
+                self.iconbitmap(default=icon)   # vale para todas as janelas
+            except tk.TclError:
+                pass
         self.windows: dict[str, tk.Toplevel] = {}
         self.page: tk.Frame | None = None
         self.show_home()
@@ -70,9 +79,9 @@ class Launcher(tk.Tk):
         box = tk.Frame(head, bg=BG)
         box.pack(side="left")
         tk.Label(box, text=title, bg=BG, fg=TEXT,
-                 font=("Helvetica", 20, "bold")).pack(anchor="w")
+                 font=(UI_FONT, 20, "bold")).pack(anchor="w")
         tk.Label(box, text=subtitle, bg=BG, fg=MUTED,
-                 font=("Helvetica", 11)).pack(anchor="w")
+                 font=(UI_FONT, 11)).pack(anchor="w")
         body = tk.Frame(self.page, bg=BG)
         body.pack(expand=True)
         return body
