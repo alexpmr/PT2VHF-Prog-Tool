@@ -1,4 +1,4 @@
-; Instalador do Programador de Rádios (NSIS 3).
+; Instalador do PT2VHF Prog Tool (NSIS 3).
 ; Compile depois do PyInstaller, na raiz do projeto:
 ;   makensis -DVERSION=1.1.0 packaging/windows/installer.nsi
 
@@ -7,17 +7,17 @@ Unicode true
 !include "x64.nsh"
 
 !ifndef VERSION
-  !define VERSION "1.1.0"
+  !define VERSION "1.2.0"
 !endif
-!define APPNAME "Programador de Rádios"
-!define APPEXE "ProgramadorRadios.exe"
-!define REGKEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\ProgramadorRadios"
-!define SRCDIR "../../dist/ProgramadorRadios"
+!define APPNAME "PT2VHF Prog Tool"
+!define APPEXE "PT2VHFProgTool.exe"
+!define REGKEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\PT2VHFProgTool"
+!define SRCDIR "../../dist/PT2VHFProgTool"
 
 Name "${APPNAME} ${VERSION}"
-OutFile "../../dist/ProgramadorRadios-${VERSION}-instalador.exe"
-InstallDir "$PROGRAMFILES64\Programador de Radios"
-InstallDirRegKey HKLM "Software\ProgramadorRadios" "InstallDir"
+OutFile "../../dist/PT2VHFProgTool-${VERSION}-instalador.exe"
+InstallDir "$PROGRAMFILES64\PT2VHF Prog Tool"
+InstallDirRegKey HKLM "Software\PT2VHFProgTool" "InstallDir"
 RequestExecutionLevel admin
 SetCompressor /SOLID lzma
 BrandingText "${APPNAME} ${VERSION}"
@@ -45,6 +45,8 @@ VIAddVersionKey /LANG=1046 "LegalCopyright" "GPLv3"
 !insertmacro MUI_UNPAGE_INSTFILES
 !insertmacro MUI_LANGUAGE "PortugueseBR"
 
+!define OLDKEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\ProgramadorRadios"
+
 Function .onInit
   ${IfNot} ${RunningX64}
     MessageBox MB_ICONSTOP "Este programa requer o Windows 64 bits."
@@ -52,6 +54,18 @@ Function .onInit
   ${EndIf}
   SetRegView 64
 FunctionEnd
+
+; Remove a versão 1.1.0, que se chamava "Programador de Rádios"
+Section "-RemoverVersaoAntiga"
+  ReadRegStr $R0 HKLM "${OLDKEY}" "InstallLocation"
+  StrCmp $R0 "" fim
+  IfFileExists "$R0\Desinstalar.exe" 0 fim
+    DetailPrint "Removendo a versão anterior (Programador de Rádios)..."
+    ExecWait '"$R0\Desinstalar.exe" /S _?=$R0'
+    Delete "$R0\Desinstalar.exe"
+    RMDir "$R0"
+  fim:
+SectionEnd
 
 Function un.onInit
   SetRegView 64
@@ -71,7 +85,7 @@ Section "Programa (obrigatório)" SecMain
   CreateShortcut "$SMPROGRAMS\${APPNAME}\${APPNAME}.lnk" "$INSTDIR\${APPEXE}"
   CreateShortcut "$SMPROGRAMS\${APPNAME}\Desinstalar.lnk" "$INSTDIR\Desinstalar.exe"
 
-  WriteRegStr HKLM "Software\ProgramadorRadios" "InstallDir" "$INSTDIR"
+  WriteRegStr HKLM "Software\PT2VHFProgTool" "InstallDir" "$INSTDIR"
   WriteRegStr HKLM "${REGKEY}" "DisplayName" "${APPNAME}"
   WriteRegStr HKLM "${REGKEY}" "DisplayVersion" "${VERSION}"
   WriteRegStr HKLM "${REGKEY}" "DisplayIcon" "$INSTDIR\${APPEXE}"
@@ -97,7 +111,7 @@ Section "Uninstall"
   Delete "$INSTDIR\LICENCA.txt"
   RMDir "$INSTDIR"
   DeleteRegKey HKLM "${REGKEY}"
-  DeleteRegKey HKLM "Software\ProgramadorRadios"
+  DeleteRegKey HKLM "Software\PT2VHFProgTool"
 SectionEnd
 
 LangString DESC_MAIN ${LANG_PORTUGUESEBR} "Arquivos do programa e atalhos no Menu Iniciar."

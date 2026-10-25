@@ -1,3 +1,3 @@
-"""Tela inicial do Programador de Rádios."""
+"""Tela inicial do PT2VHF Prog Tool."""
 
-__version__ = "1.1.0"
+__version__ = "1.2.0"

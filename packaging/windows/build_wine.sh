@@ -11,7 +11,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
-CACHE="${BUILD_CACHE:-$HOME/.cache/programador-radios-winbuild}"
+CACHE="${BUILD_CACHE:-$HOME/.cache/pt2vhf-prog-tool-winbuild}"
 export WINEPREFIX="$CACHE/wineprefix" WINEDEBUG=-all
 export LANG=C.UTF-8 LC_ALL=C.UTF-8
 MINICONDA="Miniconda3-py312_26.7.1-1-Windows-x86_64.exe"
@@ -36,19 +36,19 @@ if [ ! -f "$WINEPREFIX/drive_c/mc/python.exe" ]; then
 fi
 
 echo ">> PyInstaller $VERSION"
-rm -rf build/pyinstaller dist/ProgramadorRadios
+rm -rf build/pyinstaller dist/PT2VHFProgTool
 # as DLLs do conda (Tcl/Tk, ffi, OpenSSL...) ficam em Library\bin
 WINEPATH='C:\mc\Library\bin;C:\mc' wine 'C:\mc\python.exe' -m PyInstaller \
   --noconfirm --clean --distpath dist --workpath build/pyinstaller \
-  packaging/windows/programador.spec </dev/null | cat
+  packaging/windows/pt2vhf-prog-tool.spec </dev/null | cat
 
 echo ">> NSIS"
 makensis -V2 -DVERSION="$VERSION" packaging/windows/installer.nsi
 echo ">> Versão portátil"
-PORT="dist/ProgramadorRadios-$VERSION-windows-portatil.zip"
-rm -rf "dist/Programador de Radios" "$PORT"
-cp -r dist/ProgramadorRadios "dist/Programador de Radios"
-cp LICENSE "dist/Programador de Radios/LICENCA.txt"
-(cd dist && zip -qr "../$PORT" "Programador de Radios")
-rm -rf "dist/Programador de Radios"
-echo "Pronto: dist/ProgramadorRadios-$VERSION-instalador.exe e $PORT"
+PORT="dist/PT2VHFProgTool-$VERSION-windows-portatil.zip"
+rm -rf "dist/PT2VHF Prog Tool" "$PORT"
+cp -r dist/PT2VHFProgTool "dist/PT2VHF Prog Tool"
+cp LICENSE "dist/PT2VHF Prog Tool/LICENCA.txt"
+(cd dist && zip -qr "../$PORT" "PT2VHF Prog Tool")
+rm -rf "dist/PT2VHF Prog Tool"
+echo "Pronto: dist/PT2VHFProgTool-$VERSION-instalador.exe e $PORT"

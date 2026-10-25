@@ -50,8 +50,8 @@ class Card(tk.Frame):
 class Launcher(tk.Tk):
     def __init__(self):
         # className define o WM_CLASS no Linux (casa com o .desktop)
-        super().__init__(className="programador-radios")
-        self.title("Programador de Rádios")
+        super().__init__(className="pt2vhf-prog-tool")
+        self.title("PT2VHF Prog Tool")
         self.geometry("820x520")
         self.minsize(640, 440)
         self.configure(bg=BG)
@@ -98,7 +98,7 @@ class Launcher(tk.Tk):
         return body
 
     def show_home(self) -> None:
-        body = self._new_page("Programador de Rádios",
+        body = self._new_page("PT2VHF Prog Tool",
                               "Escolha o fabricante do rádio")
         Card(body, "kenwood", "Kenwood", "Transceptores HF/VHF/UHF",
              self.show_kenwood).grid(row=0, column=0, padx=16, pady=16)

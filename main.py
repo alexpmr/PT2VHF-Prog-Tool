@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Inicia o Programador de Rádios (tela inicial com Kenwood e ICOM)."""
+"""Inicia o PT2VHF Prog Tool (tela inicial com Kenwood e ICOM)."""
 
 from launcher.app import main
 

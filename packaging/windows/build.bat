@@ -12,14 +12,14 @@ set VERSION=%VERSION:"=%
 echo Versao: %VERSION%
 
 python -m pip install --upgrade "pyinstaller==6.11.1" pyserial || goto :erro
-python -m PyInstaller --noconfirm --clean --distpath dist --workpath build\pyinstaller packaging\windows\programador.spec || goto :erro
+python -m PyInstaller --noconfirm --clean --distpath dist --workpath build\pyinstaller packaging\windows\pt2vhf-prog-tool.spec || goto :erro
 
 set MAKENSIS=makensis
 where makensis >nul 2>nul || set MAKENSIS="%ProgramFiles(x86)%\NSIS\makensis.exe"
 %MAKENSIS% -DVERSION=%VERSION% packaging\windows\installer.nsi || goto :erro
 
 echo.
-echo Pronto: dist\ProgramadorRadios-%VERSION%-instalador.exe
+echo Pronto: dist\PT2VHFProgTool-%VERSION%-instalador.exe
 exit /b 0
 
 :erro

@@ -1,4 +1,4 @@
-# Programador de Rádios — Kenwood TS-2000, Icom ID-51A Plus2 e ID-880H
+# PT2VHF Prog Tool — Kenwood TS-2000, Icom ID-51A Plus2 e ID-880H
 
 Aplicativo desktop (Python + Tkinter) para programar rádios pela porta
 serial. A tela inicial mostra os fabricantes. Clicando em **Kenwood**
@@ -101,7 +101,7 @@ TS-2000 simulado tem frequência, S-meter e TX variando para o display.
 
 ## Instalador para Windows
 
-O arquivo `ProgramadorRadios-<versão>-instalador.exe` instala o programa no
+O arquivo `PT2VHFProgTool-<versão>-instalador.exe` instala o programa no
 Windows 10/11 de 64 bits. Ele cria atalhos no Menu Iniciar e, se você
 quiser, no desktop. A desinstalação fica em **Configurações › Aplicativos**
 e também no Menu Iniciar. Não é preciso instalar Python.

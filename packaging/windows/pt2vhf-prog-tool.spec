@@ -1,6 +1,6 @@
 # -*- mode: python ; coding: utf-8 -*-
-# PyInstaller: gera dist/ProgramadorRadios/ (modo pasta, inicia rápido).
-# Uso (na raiz do projeto):  pyinstaller packaging/windows/programador.spec
+# PyInstaller: gera dist/PT2VHFProgTool/ (modo pasta, inicia rápido).
+# Uso (na raiz do projeto):  pyinstaller packaging/windows/pt2vhf-prog-tool.spec
 
 import os
 import re
@@ -18,11 +18,11 @@ version_info = VSVersionInfo(
     ffi=FixedFileInfo(filevers=nums, prodvers=nums),
     kids=[
         StringFileInfo([StringTable("041604B0", [
-            StringStruct("FileDescription", "Programador de Rádios"),
-            StringStruct("ProductName", "Programador de Rádios"),
+            StringStruct("FileDescription", "PT2VHF Prog Tool"),
+            StringStruct("ProductName", "PT2VHF Prog Tool"),
             StringStruct("FileVersion", VERSION),
             StringStruct("ProductVersion", VERSION),
-            StringStruct("OriginalFilename", "ProgramadorRadios.exe"),
+            StringStruct("OriginalFilename", "PT2VHFProgTool.exe"),
             StringStruct("LegalCopyright", "GPLv3"),
         ])]),
         VarFileInfo([VarStruct("Translation", [0x0416, 1200])]),
@@ -45,11 +45,11 @@ pyz = PYZ(a.pure)
 exe = EXE(
     pyz, a.scripts, [],
     exclude_binaries=True,
-    name="ProgramadorRadios",
+    name="PT2VHFProgTool",
     console=False,
     icon=os.path.join(ROOT, "assets", "app.ico"),
     version=version_info,
     upx=False,
 )
-coll = COLLECT(exe, a.binaries, a.datas, name="ProgramadorRadios",
+coll = COLLECT(exe, a.binaries, a.datas, name="PT2VHFProgTool",
                upx=False)

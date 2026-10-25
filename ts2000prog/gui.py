@@ -21,7 +21,7 @@ from .menus import MenuDef, load_menu_defs, save_menu_defs
 from .radio import (BAUD_RATES, TS2000, Cancelled, RadioError, list_ports)
 from .status import RadioStatus
 
-APP_TITLE = "Programador Kenwood TS-2000"
+APP_TITLE = "PT2VHF Prog Tool — Kenwood TS-2000"
 FILE_TYPES = [("Projeto TS-2000", "*.ts2k"), ("Todos", "*.*")]
 CSV_TYPES = [("CSV", "*.csv"), ("Todos", "*.*")]
 

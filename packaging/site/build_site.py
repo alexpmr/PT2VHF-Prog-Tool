@@ -27,11 +27,11 @@ with open(os.path.join(ROOT, "launcher", "__init__.py"),
     VERSION = re.search(r'__version__ = "([^"]+)"', fh.read()).group(1)
 
 FILES = {
-    "win": f"ProgramadorRadios-{VERSION}-instalador.exe",
-    "winzip": f"ProgramadorRadios-{VERSION}-windows-portatil.zip",
-    "deb": f"programador-radios_{VERSION}_all.deb",
-    "tgz": f"programador-radios-{VERSION}-linux.tar.gz",
-    "src": f"programador-radios-{VERSION}-codigo-fonte.zip",
+    "win": f"PT2VHFProgTool-{VERSION}-instalador.exe",
+    "winzip": f"PT2VHFProgTool-{VERSION}-windows-portatil.zip",
+    "deb": f"pt2vhf-prog-tool_{VERSION}_all.deb",
+    "tgz": f"pt2vhf-prog-tool-{VERSION}-linux.tar.gz",
+    "src": f"pt2vhf-prog-tool-{VERSION}-codigo-fonte.zip",
 }
 
 
@@ -54,7 +54,7 @@ def prepare() -> dict[str, dict]:
     os.makedirs(os.path.join(SITE, "img"))
     # código-fonte (exigido pela GPL ao distribuir os executáveis)
     subprocess.run(["git", "archive", "--format=zip",
-                    f"--prefix=programador-radios-{VERSION}/",
+                    f"--prefix=pt2vhf-prog-tool-{VERSION}/",
                     "-o", os.path.join(DIST, FILES["src"]), "HEAD"],
                    cwd=ROOT, check=True)
     info = {}
@@ -81,7 +81,7 @@ PAGE = """<!doctype html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Programador de Rádios</title>
+<title>PT2VHF Prog Tool</title>
 <meta name="description" content="Programador gratuito para Kenwood TS-2000 (memórias, menus e display em tempo real) e Icom ID-51A Plus2 / ID-880H (memórias por clonagem).">
 <link rel="icon" href="img/icone.png">
 <style>
@@ -161,7 +161,7 @@ footer { border-top: 1px solid var(--line); margin-top: 40px; padding: 24px 0 40
   <div class="wrap">
     <img src="img/icone.png" alt="">
     <div>
-      <h1>Programador de Rádios</h1>
+      <h1>PT2VHF Prog Tool</h1>
       <p>Programação gratuita do <b>Kenwood TS-2000</b> (memórias, menus e display LCD em tempo real) e dos <b>Icom ID-51A Plus2</b> e <b>ID-880H</b> (memórias por clonagem).</p>
       <div class="meta">Versão __VERSION__ · __DATE__ · Windows e Linux · Software livre (GPLv3)</div>
       <div class="cta">
@@ -187,7 +187,7 @@ footer { border-top: 1px solid var(--line); margin-top: 40px; padding: 24px 0 40
       <div class="card" data-os="win">
         <h3>Windows portátil</h3>
         <div class="os">Windows 10 e 11, 64 bits · __WINZIP_SIZE__</div>
-        <p>Sem instalação: descompacte e abra <code>ProgramadorRadios.exe</code>. Bom para pen drive.</p>
+        <p>Sem instalação: descompacte e abra <code>PT2VHFProgTool.exe</code>. Bom para pen drive.</p>
         <a class="btn" href="__WINZIP__" download>Baixar .zip</a>
         <div class="sha">SHA-256: __WINZIP_SHA__</div>
       </div>
@@ -201,7 +201,7 @@ footer { border-top: 1px solid var(--line); margin-top: 40px; padding: 24px 0 40
       <div class="card" data-os="linux">
         <h3>Outras distribuições / macOS</h3>
         <div class="os">Python 3.10+ com Tkinter · __TGZ_SIZE__</div>
-        <p>Para Fedora, Arch, openSUSE e macOS (avançado). Descompacte e rode <code>./programador-radios.sh</code>.</p>
+        <p>Para Fedora, Arch, openSUSE e macOS (avançado). Descompacte e rode <code>./pt2vhf-prog-tool.sh</code>.</p>
         <a class="btn" href="__TGZ__" download>Baixar .tar.gz</a>
         <div class="sha">SHA-256: __TGZ_SHA__</div>
       </div>
@@ -250,7 +250,7 @@ footer { border-top: 1px solid var(--line); margin-top: 40px; padding: 24px 0 40
       <ol>
         <li>Instale com <code>sudo apt install ./__DEB__</code> (ou dê dois cliques no arquivo).</li>
         <li>Libere a porta serial para seu usuário: <code>sudo usermod -aG dialout $USER</code> e entre de novo na sessão.</li>
-        <li>Abra <b>Programador de Rádios</b> no menu de aplicativos.</li>
+        <li>Abra <b>PT2VHF Prog Tool</b> no menu de aplicativos.</li>
       </ol>
     </details>
     <details>
@@ -258,7 +258,7 @@ footer { border-top: 1px solid var(--line); margin-top: 40px; padding: 24px 0 40
       <ol>
         <li>Instale o Python 3.10+ com Tkinter (Fedora: <code>python3-tkinter</code>; Arch: <code>tk</code>; macOS: Python de python.org).</li>
         <li>Descompacte: <code>tar xzf __TGZ__</code></li>
-        <li>Rode: <code>./programador-radios-__VERSION__/programador-radios.sh</code> (instala o pyserial se faltar).</li>
+        <li>Rode: <code>./pt2vhf-prog-tool-__VERSION__/pt2vhf-prog-tool.sh</code> (instala o pyserial se faltar).</li>
       </ol>
     </details>
     <details>
@@ -287,7 +287,7 @@ footer { border-top: 1px solid var(--line); margin-top: 40px; padding: 24px 0 40
 </main>
 
 <footer>
-  <div class="wrap">Programador de Rádios __VERSION__ · Kenwood e Icom são marcas de seus respectivos donos; este programa não é afiliado a elas.</div>
+  <div class="wrap">PT2VHF Prog Tool __VERSION__ · Kenwood e Icom são marcas de seus respectivos donos; este programa não é afiliado a elas.</div>
 </footer>
 
 <script>

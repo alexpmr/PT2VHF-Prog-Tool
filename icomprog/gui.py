@@ -371,7 +371,7 @@ class IcomEditor(tk.Toplevel):
     def _title(self) -> None:
         name = os.path.basename(self.path) if self.path else "sem título"
         self.title(f"{'*' if self.modified else ''}{name} — "
-                   f"Editor Icom {self.model.name}")
+                   f"PT2VHF Prog Tool — Icom {self.model.name}")
 
     def _set_modified(self) -> None:
         self.modified = True
