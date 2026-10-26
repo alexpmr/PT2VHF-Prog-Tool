@@ -13,7 +13,7 @@ python_tests:
   stage: test
   image: python:3.12-bookworm
   before_script:
-    - apt-get update && apt-get install -y --no-install-recommends xvfb tk
+    - apt-get update && apt-get install -y --no-install-recommends xvfb xauth tk
   script:
     - python -m pip install -r requirements.txt
     - python -m compileall -q launcher ts2000prog icomprog common main.py
