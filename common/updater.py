@@ -236,3 +236,123 @@ def open_path(path: str) -> None:
         subprocess.Popen(["open", path])
     else:
         subprocess.Popen(["xdg-open", path])
+
+
+# ------------------------------------------------------------- OTA interno
+
+def app_dir() -> str:
+    """Pasta da instalação atual (onde fica o executável ou o main.py)."""
+    if getattr(sys, "frozen", False):
+        return os.path.dirname(os.path.abspath(sys.executable))
+    return os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+
+def _extract(archive: str, dest: str) -> str:
+    """Extrai .zip/.tar.gz com segurança e devolve a pasta raiz extraída."""
+    import tarfile
+    import zipfile
+    os.makedirs(dest, exist_ok=True)
+    root = os.path.realpath(dest)
+    if archive.endswith(".zip"):
+        with zipfile.ZipFile(archive) as z:
+            names = z.namelist()
+            for n in names:
+                if not os.path.realpath(os.path.join(dest, n)).startswith(
+                        root + os.sep):
+                    raise UpdateError("Pacote com caminho inválido")
+            z.extractall(dest)
+    else:
+        with tarfile.open(archive) as t:
+            for m in t.getmembers():
+                p = os.path.realpath(os.path.join(dest, m.name))
+                if not p.startswith(root + os.sep) or m.issym() or m.islnk():
+                    raise UpdateError("Pacote com caminho inválido")
+            t.extractall(dest)
+    entries = [e for e in os.listdir(dest) if not e.startswith(".")]
+    if len(entries) == 1 and os.path.isdir(os.path.join(dest, entries[0])):
+        return os.path.join(dest, entries[0])
+    return dest
+
+
+def _copy_tree(src: str, dst: str) -> None:
+    import shutil
+    for name in os.listdir(src):
+        s, d = os.path.join(src, name), os.path.join(dst, name)
+        if os.path.isdir(s):
+            os.makedirs(d, exist_ok=True)
+            _copy_tree(s, d)
+        else:
+            shutil.copy2(s, d)
+
+
+def apply_update(path: str, kind: str) -> str:
+    """Instala o pacote baixado sem sair do programa (quando possível).
+
+    Devolve "restart" (reabra o programa: o chamador sai e relança),
+    "exit" (um instalador externo vai reabrir o programa; apenas saia) ou
+    "manual" (o arquivo foi aberto/salvo; o usuário conclui).
+    """
+    if kind == "windows-instalador":
+        launch_installer(path)
+        return "exit"
+    if kind == "windows-portatil":
+        new = _extract(path, tempfile.mkdtemp(prefix="pt2vhf-ota-"))
+        exe = os.path.join(app_dir(), os.path.basename(sys.executable))
+        bat = os.path.join(tempfile.gettempdir(), "pt2vhf-ota.bat")
+        with open(bat, "w", encoding="mbcs" if sys.platform == "win32"
+                  else "utf-8") as fh:
+            fh.write(
+                "@echo off\r\n"
+                f":espera\r\ntasklist /FI \"PID eq {os.getpid()}\" | "
+                f"find \"{os.getpid()}\" >nul && (timeout /t 1 >nul & "
+                "goto espera)\r\n"
+                f"robocopy \"{new}\" \"{app_dir()}\" /E /R:3 /W:1 >nul\r\n"
+                f"start \"\" \"{exe}\"\r\n"
+                f"rmdir /S /Q \"{os.path.dirname(new)}\"\r\n"
+                "del \"%~f0\"\r\n")
+        subprocess.Popen(["cmd", "/c", bat], close_fds=True,
+                         creationflags=getattr(subprocess,
+                                               "CREATE_NO_WINDOW", 0))
+        return "exit"
+    if kind == "tgz":
+        target = app_dir()
+        if not os.access(target, os.W_OK):
+            open_path(os.path.dirname(path))
+            return "manual"
+        new = _extract(path, tempfile.mkdtemp(prefix="pt2vhf-ota-"))
+        if not os.path.isfile(os.path.join(new, "main.py")):
+            raise UpdateError("Pacote .tar.gz sem main.py")
+        _copy_tree(new, target)
+        return "restart"
+    if kind == "deb":
+        import shutil
+        if shutil.which("pkexec"):
+            r = subprocess.run(["pkexec", "apt-get", "install", "-y", path])
+            if r.returncode == 0:
+                return "restart"
+            raise UpdateError("A instalação do pacote foi cancelada ou "
+                              "falhou")
+        open_path(path)
+        return "manual"
+    open_path(path)
+    return "manual"
+
+
+def restart() -> None:
+    """Reabre o programa (após OTA em .tar.gz ou .deb)."""
+    if getattr(sys, "frozen", False):
+        args = [sys.executable]
+    elif install_kind() == "deb":
+        args = ["/usr/bin/pt2vhf-prog-tool"]
+    else:
+        args = [sys.executable, os.path.join(app_dir(), "main.py")]
+    subprocess.Popen(args, close_fds=True)
+    os._exit(0)
+
+
+KIND_LABELS = {
+    "windows-instalador": "Windows (instalado)",
+    "windows-portatil": "Windows (portátil)",
+    "deb": "Linux (pacote .deb)",
+    "tgz": "Código-fonte / .tar.gz",
+}

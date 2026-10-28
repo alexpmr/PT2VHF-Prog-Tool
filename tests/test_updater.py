@@ -81,5 +81,31 @@ class UpdaterTests(unittest.TestCase):
             U._check_scheme("http://www.pt2vhf.com/x")
 
 
+class ExtractTests(unittest.TestCase):
+    def test_rejects_path_traversal(self):
+        import tarfile
+        d = tempfile.mkdtemp()
+        evil = os.path.join(d, "evil.tar.gz")
+        src = os.path.join(d, "x.txt")
+        with open(src, "w") as fh:
+            fh.write("x")
+        with tarfile.open(evil, "w:gz") as t:
+            t.add(src, arcname="../../fora.txt")
+        with self.assertRaises(U.UpdateError):
+            U._extract(evil, os.path.join(d, "out"))
+
+    def test_extracts_single_root(self):
+        import tarfile
+        d = tempfile.mkdtemp()
+        os.makedirs(os.path.join(d, "app-1.0"))
+        with open(os.path.join(d, "app-1.0", "main.py"), "w") as fh:
+            fh.write("print(1)")
+        arc = os.path.join(d, "a.tar.gz")
+        with tarfile.open(arc, "w:gz") as t:
+            t.add(os.path.join(d, "app-1.0"), arcname="app-1.0")
+        root = U._extract(arc, os.path.join(d, "out"))
+        self.assertTrue(os.path.isfile(os.path.join(root, "main.py")))
+
+
 if __name__ == "__main__":
     unittest.main()

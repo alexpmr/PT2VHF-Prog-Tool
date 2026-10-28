@@ -69,11 +69,11 @@ class Launcher(tk.Tk):
         foot.pack(side="bottom", fill="x", padx=24, pady=(0, 10))
         tk.Label(foot, text=f"Versão {__version__}", bg=BG, fg=MUTED,
                  font=(UI_FONT, 9)).pack(side="left")
-        link = tk.Label(foot, text="Verificar atualizações", bg=BG,
+        link = tk.Label(foot, text="Versões e atualizações", bg=BG,
                         fg="#1d4f91", cursor="hand2",
                         font=(UI_FONT, 9, "underline"))
         link.pack(side="left", padx=12)
-        link.bind("<Button-1>", lambda e: self.check_updates(True))
+        link.bind("<Button-1>", lambda e: self.show_versions())
         self.v_auto = tk.BooleanVar(
             value=updater.load_config().get("auto_update", True))
         tk.Checkbutton(foot, text="Verificar automaticamente",
@@ -92,6 +92,10 @@ class Launcher(tk.Tk):
         from common import updater
         if updater.auto_check_due(updater.load_config()):
             self.check_updates(False)
+
+    def show_versions(self) -> None:
+        from common.update_ui import VersionDialog
+        VersionDialog(self)
 
     def check_updates(self, manual: bool) -> None:
         from common.update_ui import check_async

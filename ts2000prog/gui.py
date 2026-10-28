@@ -329,6 +329,8 @@ class App(tk.Toplevel):
         mb.add_cascade(label="Menus", menu=mm)
 
         h = tk.Menu(mb, tearoff=False)
+        h.add_command(label="Versões e atualizações",
+                      command=self.show_versions)
         h.add_command(label="Sobre", command=self.about)
         mb.add_cascade(label="Ajuda", menu=h)
         self.config(menu=mb)
@@ -1084,6 +1086,10 @@ class App(tk.Toplevel):
             self.monitor_thread = None
 
     # -------------------------------------------------------------- misc
+    def show_versions(self) -> None:
+        from common.update_ui import VersionDialog
+        VersionDialog(self)
+
     def about(self) -> None:
         messagebox.showinfo(
             "Sobre",

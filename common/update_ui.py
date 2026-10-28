@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 import queue
+import tempfile
 import threading
 import time
 import tkinter as tk
@@ -82,27 +83,28 @@ class UpdateDialog(tk.Toplevel):
         self.pb.pack(fill="x", pady=8)
         b = ttk.Frame(f)
         b.pack(fill="x")
-        self.btn_go = ttk.Button(
-            b, text="Atualizar agora" if self.kind == "windows-instalador"
-            else "Baixar", command=self.start)
+        self.btn_go = ttk.Button(b, text="Atualizar agora",
+                                 command=self.start)
         self.btn_go.pack(side="right")
         ttk.Button(b, text="Lembrar depois", command=self.close).pack(
             side="right", padx=6)
         ttk.Button(b, text="Pular esta versão", command=self.skip).pack(
             side="left")
         if self.entry is None:
-            self.btn_go.configure(text="Abrir o site", command=self.open_page)
+            self.btn_go.configure(text="Abrir o site",
+                                  command=self.open_page)
         self.protocol("WM_DELETE_WINDOW", self.close)
 
     def _hint(self) -> str:
         return {
             "windows-instalador": "O instalador será baixado, conferido e "
             "executado; o programa fecha e reabre já atualizado.",
-            "windows-portatil": "O novo .zip será baixado para a pasta "
-            "Downloads; descompacte-o no lugar da pasta atual.",
-            "deb": "O novo pacote .deb será baixado e aberto no instalador "
-            "de programas do sistema.",
-            "tgz": "O novo .tar.gz será baixado para a pasta Downloads.",
+            "windows-portatil": "A nova versão será baixada, conferida e "
+            "copiada sobre a pasta atual; o programa reabre atualizado.",
+            "deb": "O novo pacote .deb será baixado, conferido e instalado "
+            "(o sistema pede a senha de administrador).",
+            "tgz": "A nova versão será baixada, conferida e copiada sobre a "
+            "pasta atual; o programa reabre atualizado.",
         }.get(self.kind, "")
 
     def open_page(self) -> None:
@@ -121,7 +123,7 @@ class UpdateDialog(tk.Toplevel):
         self.destroy()
 
     def start(self) -> None:
-        if self.kind == "windows-instalador" and not messagebox.askyesno(
+        if not messagebox.askyesno(
                 "Atualizar", "O programa será fechado para instalar a nova "
                 "versão. Salve antes os projetos abertos.\n\nContinuar?",
                 parent=self):
@@ -129,8 +131,8 @@ class UpdateDialog(tk.Toplevel):
         self.btn_go.configure(state="disabled")
         self.v_status.set("Baixando...")
         entry = self.entry
-        dest = U.downloads_dir() if self.kind != "windows-instalador" \
-            else os.path.join(os.environ.get("TEMP", U.downloads_dir()))
+        dest = U.downloads_dir() if self.kind == "deb" \
+            else tempfile.mkdtemp(prefix="pt2vhf-dl-")
 
         def work():
             try:
@@ -167,12 +169,125 @@ class UpdateDialog(tk.Toplevel):
         self.after(100, self._poll)
 
     def _finish(self, path: str) -> None:
-        if self.kind == "windows-instalador":
-            self.v_status.set("Instalando a nova versão...")
-            self.update()
-            U.launch_installer(path)
-            os._exit(0)     # libera os arquivos para o instalador
-        self.v_status.set(f"Arquivo conferido e salvo em:\n{path}")
-        self.btn_go.configure(text="Abrir", state="normal",
-                              command=lambda: (U.open_path(path),
-                                               self.close()))
+        self.v_status.set("Arquivo conferido. Instalando...")
+        self.update()
+        try:
+            action = U.apply_update(path, self.kind)
+        except U.UpdateError as e:
+            self.v_status.set(str(e))
+            self.btn_go.configure(state="normal")
+            return
+        if action == "exit":
+            os._exit(0)     # o instalador/script reabre o programa
+        if action == "restart":
+            messagebox.showinfo("Atualização",
+                                f"Versão {self.info.version} instalada. "
+                                "O programa será reaberto.", parent=self)
+            U.restart()
+        self.v_status.set(f"Arquivo conferido e salvo em:\n{path}\n"
+                          "Conclua a instalação por ele.")
+        self.btn_go.configure(text="Fechar", state="normal",
+                              command=self.close)
+
+
+class VersionDialog(tk.Toplevel):
+    """Compara a versão instalada com a publicada no site."""
+
+    def __init__(self, master):
+        super().__init__(master)
+        self.title("Versões — PT2VHF Prog Tool")
+        self.transient(master)
+        self.resizable(False, False)
+        self.info: U.UpdateInfo | None = None
+        f = ttk.Frame(self, padding=16)
+        f.pack(fill="both", expand=True)
+        cfg = U.load_config()
+        last = cfg.get("last_check")
+        rows = [
+            ("Versão instalada", U.current_version()),
+            ("Tipo de instalação", U.KIND_LABELS.get(U.install_kind(), "?")),
+            ("Pasta", U.app_dir()),
+            ("Site de atualização", U.update_url()),
+            ("Última verificação", time.strftime(
+                "%d/%m/%Y %H:%M", time.localtime(last)) if last else "nunca"),
+        ]
+        for i, (k, v) in enumerate(rows):
+            ttk.Label(f, text=k + ":", foreground="gray").grid(
+                row=i, column=0, sticky="nw", padx=(0, 10), pady=2)
+            ttk.Label(f, text=v, wraplength=380).grid(row=i, column=1,
+                                                     sticky="w", pady=2)
+        ttk.Separator(f).grid(row=len(rows), columnspan=2, sticky="we",
+                              pady=8)
+        self.v_site = tk.StringVar(value="Consultando o site...")
+        ttk.Label(f, text="Versão no site:", foreground="gray").grid(
+            row=len(rows) + 1, column=0, sticky="nw", padx=(0, 10))
+        ttk.Label(f, textvariable=self.v_site, wraplength=380,
+                  justify="left").grid(row=len(rows) + 1, column=1,
+                                       sticky="w")
+        self.v_auto = tk.BooleanVar(value=cfg.get("auto_update", True))
+        ttk.Checkbutton(f, text="Verificar automaticamente todo dia",
+                        variable=self.v_auto, command=self._toggle).grid(
+            row=len(rows) + 2, columnspan=2, sticky="w", pady=(10, 0))
+        b = ttk.Frame(f)
+        b.grid(row=len(rows) + 3, columnspan=2, sticky="e", pady=(12, 0))
+        self.btn_update = ttk.Button(b, text="Atualizar agora",
+                                     state="disabled", command=self._update)
+        self.btn_update.pack(side="right")
+        ttk.Button(b, text="Verificar de novo",
+                   command=self._check).pack(side="right", padx=6)
+        ttk.Button(b, text="Fechar", command=self.destroy).pack(side="right")
+        self._check()
+
+    def _toggle(self) -> None:
+        cfg = U.load_config()
+        cfg["auto_update"] = self.v_auto.get()
+        U.save_config(cfg)
+
+    def _check(self) -> None:
+        self.v_site.set("Consultando o site...")
+        self.btn_update.configure(state="disabled")
+        q: queue.Queue = queue.Queue()
+
+        def work():
+            try:
+                q.put(("ok", U.check()))
+            except U.UpdateError as e:
+                q.put(("erro", str(e)))
+
+        threading.Thread(target=work, daemon=True).start()
+
+        def poll():
+            if not self.winfo_exists():
+                return
+            try:
+                kind, value = q.get_nowait()
+            except queue.Empty:
+                self.after(200, poll)
+                return
+            cfg = U.load_config()
+            cfg["last_check"] = time.time()
+            U.save_config(cfg)
+            if kind == "erro":
+                self.v_site.set(f"Não foi possível verificar: {value}")
+                return
+            self.info = value
+            cur = U.current_version()
+            date = f" (publicada em {value.date})" if value.date else ""
+            if U.is_newer(value.version, cur):
+                self.v_site.set(f"{value.version}{date} — nova versão "
+                                "disponível")
+                self.btn_update.configure(state="normal")
+            elif U.is_newer(cur, value.version):
+                self.v_site.set(f"{value.version}{date} — a instalada é "
+                                "mais nova que a do site")
+            else:
+                self.v_site.set(f"{value.version}{date} — você está "
+                                "atualizado")
+
+        self.after(200, poll)
+
+    def _update(self) -> None:
+        if self.info:
+            master = self.master
+            self.destroy()
+            UpdateDialog(master, self.info)
