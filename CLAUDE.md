@@ -7,7 +7,8 @@ implementar → testar (`python3 -m unittest discover -s tests`) → commit →
 push no GitHub (`alexpmr/PT2VHF-Prog-Tool`, branch `main`) → gerar os
 pacotes → publicar.
 
-- **Só GitHub.** O GitLab foi aposentado; não use.
+- **Só GitHub.** O mantenedor não usa GitLab: nunca use, sugira nem mencione
+  GitLab (remotos, tokens, pipelines, releases ou checagens).
 - **Publicar uma versão:**
   1. Suba `__version__` em `launcher/__init__.py` e o `VERSION` padrão em
      `packaging/windows/installer.nsi`; escreva as novidades em
