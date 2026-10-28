@@ -179,28 +179,28 @@ footer { border-top: 1px solid var(--line); margin-top: 40px; padding: 24px 0 40
     <div class="grid">
       <div class="card rec" data-os="win">
         <h3>Windows <span class="tag">recomendado</span></h3>
-        <div class="os">Windows 10 e 11, 64 bits · __WIN_SIZE__</div>
+        <div class="os">Windows 10 e 11, 64 bits · __WIN_SIZE__ · lançado em __DATE__</div>
         <p>Instalador com atalhos no Menu Iniciar e desinstalação pelo Painel. Não precisa de Python.</p>
         <a class="btn" href="__WIN__" download>Baixar instalador</a>
         <div class="sha">SHA-256: __WIN_SHA__</div>
       </div>
       <div class="card" data-os="win">
         <h3>Windows portátil</h3>
-        <div class="os">Windows 10 e 11, 64 bits · __WINZIP_SIZE__</div>
+        <div class="os">Windows 10 e 11, 64 bits · __WINZIP_SIZE__ · lançado em __DATE__</div>
         <p>Sem instalação: descompacte e abra <code>PT2VHFProgTool.exe</code>. Bom para pen drive.</p>
         <a class="btn" href="__WINZIP__" download>Baixar .zip</a>
         <div class="sha">SHA-256: __WINZIP_SHA__</div>
       </div>
       <div class="card" data-os="linux">
         <h3>Ubuntu, Debian, Mint</h3>
-        <div class="os">Ubuntu 22.04+, Debian 12+, Mint 21+ · __DEB_SIZE__</div>
+        <div class="os">Ubuntu 22.04+, Debian 12+, Mint 21+ · __DEB_SIZE__ · lançado em __DATE__</div>
         <p>Pacote <code>.deb</code>: instala dependências, ícone e atalho no menu de aplicativos.</p>
         <a class="btn" href="__DEB__" download>Baixar .deb</a>
         <div class="sha">SHA-256: __DEB_SHA__</div>
       </div>
       <div class="card" data-os="linux">
         <h3>Outras distribuições / macOS</h3>
-        <div class="os">Python 3.10+ com Tkinter · __TGZ_SIZE__</div>
+        <div class="os">Python 3.10+ com Tkinter · __TGZ_SIZE__ · lançado em __DATE__</div>
         <p>Para Fedora, Arch, openSUSE e macOS (avançado). Descompacte e rode <code>./pt2vhf-prog-tool.sh</code>.</p>
         <a class="btn" href="__TGZ__" download>Baixar .tar.gz</a>
         <div class="sha">SHA-256: __TGZ_SHA__</div>

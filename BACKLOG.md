@@ -5,10 +5,13 @@ registradas aqui e só implementadas no próximo pedido de versão nova.
 
 ## Pendentes
 
-- Roadmap (28/10/2026): "Em todos os projetos, tabela de downloads, incluir uma
-  coluna com a data de release". As tabelas de download ficam no site
-  (registrado também no BACKLOG.md do PT2VHF-Site); aqui, incluir a data na
-  tabela da página gerada por `packaging/site/build_site.py`.
+(nenhum)
+
+## Concluídos após a 1.3.1
+
+- Roadmap (28/10/2026): data de release nas tabelas de download — coluna
+  "Lançamento" no site (todos os programas, 7 idiomas) e data em cada cartão
+  da página gerada por `packaging/site/build_site.py`.
 
 ## Concluídos na 1.3.1
 
