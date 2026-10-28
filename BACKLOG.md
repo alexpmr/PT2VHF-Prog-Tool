@@ -7,6 +7,12 @@ registradas aqui e só implementadas no próximo pedido de versão nova.
 
 (nenhum)
 
+## Concluídos na 1.3.2
+
+- Aviso do site oficial www.pt2vhf.com sempre ao abrir, sem "não mostrar
+  novamente"; a verificação de versão nova só roda depois que ele é fechado,
+  então o aviso de versão nova vem em sequência.
+
 ## Concluídos após a 1.3.1
 
 - Roadmap (28/10/2026): data de release nas tabelas de download — coluna

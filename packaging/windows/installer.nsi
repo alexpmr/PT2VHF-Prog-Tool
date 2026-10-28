@@ -9,7 +9,7 @@ Unicode true
 !include "FileFunc.nsh"
 
 !ifndef VERSION
-  !define VERSION "1.3.1"
+  !define VERSION "1.3.2"
 !endif
 !define APPNAME "PT2VHF Prog Tool"
 !define APPEXE "PT2VHFProgTool.exe"

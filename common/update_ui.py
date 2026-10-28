@@ -11,6 +11,7 @@ import tkinter as tk
 from tkinter import messagebox, ttk
 
 from . import updater as U
+from .ui import UI_FONT
 
 
 def check_async(master: tk.Misc, manual: bool) -> None:
@@ -51,6 +52,62 @@ def check_async(master: tk.Misc, manual: bool) -> None:
         UpdateDialog(master, info)
 
     master.after(200, poll)
+
+
+SITE_URL = "https://www.pt2vhf.com/prog"
+SITE_NOTICE_TITLE = "Site oficial PT2VHF"
+SITE_NOTICE_TEXT = ("Downloads, novas versões e atualizações do PT2VHF Prog Tool "
+                    "são distribuídos somente pelo site oficial. Baixe sempre "
+                    "por lá.")
+
+
+class SiteNoticeDialog(tk.Toplevel):
+    """Aviso do site oficial, mostrado a cada abertura (sem opção de ocultar).
+
+    on_close roda quando o aviso é fechado; o launcher usa isso para só então
+    verificar se há versão nova, de modo que os dois avisos venham em sequência.
+    """
+
+    def __init__(self, master, on_close=None):
+        super().__init__(master)
+        self.on_close = on_close
+        self.title(SITE_NOTICE_TITLE)
+        self.transient(master)
+        self.resizable(False, False)
+        f = ttk.Frame(self, padding=18)
+        f.pack(fill="both", expand=True)
+        ttk.Label(f, text=SITE_NOTICE_TITLE,
+                  font=(UI_FONT, 13, "bold")).pack(anchor="w")
+        ttk.Label(f, text=SITE_NOTICE_TEXT, wraplength=420,
+                  justify="left").pack(anchor="w", pady=(10, 6))
+        ttk.Label(f, text="www.pt2vhf.com",
+                  font=(UI_FONT, 10, "bold")).pack(anchor="w")
+        bar = ttk.Frame(f)
+        bar.pack(fill="x", pady=(16, 0))
+        ok = ttk.Button(bar, text="Continuar", command=self.close)
+        ok.pack(side="right")
+        ttk.Button(bar, text="Abrir o site",
+                   command=self.open_site).pack(side="right", padx=8)
+        self.protocol("WM_DELETE_WINDOW", self.close)
+        self.bind("<Return>", lambda e: self.close())
+        self.bind("<Escape>", lambda e: self.close())
+        self.update_idletasks()             # centraliza sobre a janela principal
+        x = master.winfo_rootx() + (master.winfo_width() - self.winfo_reqwidth()) // 2
+        y = master.winfo_rooty() + (master.winfo_height() - self.winfo_reqheight()) // 3
+        self.geometry(f"+{max(x, 0)}+{max(y, 0)}")
+        ok.focus_set()
+        self.grab_set()
+
+    def open_site(self) -> None:
+        import webbrowser
+        webbrowser.open(SITE_URL)
+
+    def close(self) -> None:
+        callback, self.on_close = self.on_close, None
+        self.grab_release()
+        self.destroy()
+        if callback:
+            callback()
 
 
 class UpdateDialog(tk.Toplevel):

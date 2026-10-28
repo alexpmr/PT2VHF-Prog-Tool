@@ -1,2 +1,2 @@
-Instalador do Windows corrigido para também ser gerado no próprio Windows (caminhos e acentos do assistente de instalação)
-Testes automáticos (CI) no Linux e no Windows a cada alteração, incluindo a geração do instalador
+Aviso do site oficial www.pt2vhf.com a cada abertura do programa (downloads, novas versões e atualizações só pelo site)
+O aviso de versão nova aparece em seguida, logo depois que o aviso do site é fechado

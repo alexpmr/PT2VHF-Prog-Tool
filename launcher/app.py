@@ -77,7 +77,9 @@ class Launcher(tk.Tk):
         self.page: tk.Frame | None = None
         self._build_footer()
         self.show_home()
-        self.after(1500, self._auto_check)
+        # Aviso do site oficial a cada abertura; a verificação de versão nova
+        # só roda quando ele é fechado, para os avisos virem em sequência.
+        self.after(300, self.show_site_notice)
 
     def _build_footer(self) -> None:
         from . import __version__
@@ -104,6 +106,10 @@ class Launcher(tk.Tk):
         cfg = updater.load_config()
         cfg["auto_update"] = self.v_auto.get()
         updater.save_config(cfg)
+
+    def show_site_notice(self) -> None:
+        from common.update_ui import SiteNoticeDialog
+        SiteNoticeDialog(self, on_close=self._auto_check)
 
     def _auto_check(self) -> None:
         from common import updater
