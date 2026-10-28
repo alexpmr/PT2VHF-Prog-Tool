@@ -1,5 +1,2 @@
-Atualização automática: o programa avisa quando há versão nova no site pt2vhf.com e instala com um clique
-Display em tempo real do TS-2000 redesenhado, com mais informações do rádio
-Fotos reais do TS-2000, ID-51A Plus2 e ID-880H na tela inicial
-Tela inicial organizada por fabricante, pronta para novos rádios
-Tabela de menus do TS-2000 completa (00 a 62 e sub-menus), conferida com o manual do rádio
+Instalador do Windows corrigido para também ser gerado no próprio Windows (caminhos e acentos do assistente de instalação)
+Testes automáticos (CI) no Linux e no Windows a cada alteração, incluindo a geração do instalador

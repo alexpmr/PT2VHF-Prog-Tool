@@ -5,7 +5,15 @@ registradas aqui e só implementadas no próximo pedido de versão nova.
 
 ## Pendentes
 
-(nenhum)
+- Roadmap (28/10/2026): "Em todos os projetos, tabela de downloads, incluir uma
+  coluna com a data de release". As tabelas de download ficam no site
+  (registrado também no BACKLOG.md do PT2VHF-Site); aqui, incluir a data na
+  tabela da página gerada por `packaging/site/build_site.py`.
+
+## Concluídos na 1.3.1
+
+- CI no GitHub Actions (Linux e Windows) e correções do instalador NSIS no
+  Windows (caminhos, UTF-8, barras).
 
 ## Concluídos na 1.3.0
 
