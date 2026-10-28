@@ -77,6 +77,13 @@ class SimulatedRadio:
     def close(self) -> None:
         pass
 
+    LIVE_FIXED = {
+        "RG": "255", "MG": "050", "GT": "002", "IS": "+0000", "SL": "02",
+        "SH": "08", "FW": "0000", "AN": "1", "VX": "0", "PR": "1",
+        "BC": "0", "AC": "110", "LK": "0", "KS": "022", "TN": "08",
+        "CN": "08", "NL": "005", "RL": "004",
+    }
+
     # ------------------------------------------------------- estado ao vivo
     def _phase(self) -> str:
         """Ciclo de 20 s: sintonizando, ouvindo, transmitindo."""
@@ -140,6 +147,18 @@ class SimulatedRadio:
                 self.freq_a = int(cmd[2:])
             else:
                 self.freq_b = int(cmd[2:])
+        elif cmd in self.LIVE_FIXED:
+            self._reply(cmd + self.LIVE_FIXED[cmd])
+        elif cmd == "AG0":
+            self._reply("AG0120")
+        elif cmd == "SQ0":
+            self._reply("SQ0030")
+        elif cmd == "SM1":
+            self._reply(f"SM1{max(0, self.s // 2 - 2):04d}")
+        elif cmd == "BY":
+            self._reply("BY" + ("1" if self.s > 6 else "0") + "0")
+        elif cmd == "RM":
+            self._reply(f"RM3{random.randint(4, 12):04d}")
         elif cmd == "PC":
             self._reply("PC100")
         elif cmd == "PA":

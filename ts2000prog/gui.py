@@ -1050,7 +1050,7 @@ class App(tk.Toplevel):
         self.display = None
 
     def _push_status(self, st: RadioStatus) -> None:
-        self.q.put(("status", dataclasses.replace(st)))
+        self.q.put(("status", dataclasses.replace(st, extra=dict(st.extra))))
 
     def start_monitor(self) -> None:
         if self.monitor_thread and self.monitor_thread.is_alive():

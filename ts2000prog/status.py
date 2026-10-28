@@ -82,3 +82,35 @@ def parse_sm(reply: str) -> int:
 
 def parse_freq(reply: str) -> int:
     return _digits(reply, 2)
+
+
+# ------------------------------------------------- leituras complementares
+# (chave, comando, prefixo da resposta). Valores ficam em RadioStatus.extra
+# como texto bruto após o prefixo; comandos que o rádio recusar são omitidos.
+EXTRA_QUERIES = [
+    ("af", "AG0;", "AG0"), ("rf", "RG;", "RG"), ("sql", "SQ0;", "SQ0"),
+    ("mic", "MG;", "MG"), ("agc", "GT;", "GT"), ("ifshift", "IS;", "IS"),
+    ("lowcut", "SL;", "SL"), ("highcut", "SH;", "SH"), ("width", "FW;", "FW"),
+    ("ant", "AN;", "AN"), ("vox", "VX;", "VX"), ("proc", "PR;", "PR"),
+    ("bc", "BC;", "BC"), ("tuner", "AC;", "AC"), ("lock", "LK;", "LK"),
+    ("keyer", "KS;", "KS"), ("tone", "TN;", "TN"), ("ctcss", "CN;", "CN"),
+    ("nblevel", "NL;", "NL"), ("nrlevel", "RL;", "RL"),
+    ("smeter_sub", "SM1;", "SM1"),
+]
+FAST_QUERIES = [("busy", "BY;", "BY")]
+TX_QUERIES = [("txmeter", "RM;", "RM")]
+
+# Tabelas de corte do filtro DSP em SSB (índice SL/SH -> Hz)
+SSB_LOWCUT = [0, 50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000]
+SSB_HIGHCUT = [1400, 1600, 1800, 2000, 2200, 2400, 2600, 2800, 3000, 3400,
+               4000, 5000]
+TX_METERS = {"1": "SWR", "2": "COMP", "3": "ALC"}
+
+
+def extra_int(st: RadioStatus, key: str, default: int | None = None):
+    """Número de RadioStatus.extra (aceita sinal), ou default."""
+    raw = st.extra.get(key, "")
+    try:
+        return int(raw)
+    except ValueError:
+        return default

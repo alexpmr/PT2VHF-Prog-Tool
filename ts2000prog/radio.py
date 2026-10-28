@@ -132,6 +132,7 @@ class TS2000:
         self.log = log
         self.link: CatLink | None = None
         self._saved_ai: str | None = None
+        self.unsupported: set[str] = set()
         self.radio_id = ""
 
     @property
@@ -170,6 +171,7 @@ class TS2000:
             raise
         self.link = link
         self.radio_id = rid
+        self.unsupported = set()
         return rid
 
     def disconnect(self) -> None:
@@ -216,28 +218,43 @@ class TS2000:
 
     # ------------------------------------------------------ tempo real
     def read_status(self, st: RadioStatus, full: bool = False) -> None:
-        """Atualiza `st` com IF + S-meter; `full` lê também VFO B e extras."""
-        from .status import parse_freq, parse_if, parse_sm
+        """Atualiza `st`: IF, S-meter e ocupado a cada chamada; medidor de TX
+        quando transmitindo; `full` lê também VFO B, ganhos, filtro etc."""
+        from .status import (EXTRA_QUERIES, FAST_QUERIES, TX_QUERIES,
+                             parse_freq, parse_if, parse_sm)
         link = self._require()
         parse_if(link.query("IF;", "IF", retries=1), st)
         st.smeter = parse_sm(link.query("SM0;", "SM0", retries=1))
         st.connected = True
-        if not full:
-            return
-        for cmd, prefix, apply in (
-            ("FB;", "FB", lambda r: setattr(st, "freq_b", parse_freq(r))),
-            ("PC;", "PC", lambda r: setattr(st, "power", parse_freq(r))),
-            ("PA;", "PA", lambda r: setattr(st, "preamp", r[2:3] == "1")),
-            ("RA;", "RA", lambda r: setattr(
-                st, "att", r[2:4].strip("0;") != "")),
-            ("NB;", "NB", lambda r: setattr(st, "nb", r[2:3] == "1")),
-            ("NR;", "NR", lambda r: setattr(
-                st, "nr", int(r[2]) if r[2:3].isdigit() else 0)),
-        ):
+        queries = list(FAST_QUERIES) + (list(TX_QUERIES) if st.tx else [])
+        if full:
+            queries += EXTRA_QUERIES
+            for cmd, prefix, apply in (
+                ("FB;", "FB", lambda r: setattr(st, "freq_b",
+                                                parse_freq(r))),
+                ("PC;", "PC", lambda r: setattr(st, "power", parse_freq(r))),
+                ("PA;", "PA", lambda r: setattr(st, "preamp",
+                                                r[2:3] == "1")),
+                ("RA;", "RA", lambda r: setattr(
+                    st, "att", r[2:4].strip("0;") != "")),
+                ("NB;", "NB", lambda r: setattr(st, "nb", r[2:3] == "1")),
+                ("NR;", "NR", lambda r: setattr(
+                    st, "nr", int(r[2]) if r[2:3].isdigit() else 0)),
+            ):
+                try:
+                    apply(link.query(cmd, prefix, retries=1))
+                except RadioError:
+                    pass                # comando opcional; ignora
+        for key, cmd, prefix in queries:
+            if key in self.unsupported:
+                continue
             try:
-                apply(link.query(cmd, prefix, retries=1))
-            except RadioError:
-                pass                    # comando opcional; ignora
+                st.extra[key] = link.query(cmd, prefix, retries=1) \
+                    .rstrip(";")[len(prefix):]
+            except RadioError as e:
+                if "?" in str(e):           # rádio não conhece o comando:
+                    self.unsupported.add(key)   # não pergunta de novo
+                st.extra.pop(key, None)
 
     # ----------------------------------------------------- operações em lote
     @staticmethod

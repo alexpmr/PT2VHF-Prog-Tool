@@ -225,35 +225,71 @@ class LcdCanvas(tk.Canvas):
 
 
 class DisplayWindow(tk.Toplevel):
-    """Janela do display secundário."""
+    """Janela do display em tempo real: painel moderno ou LCD clássico."""
 
     def __init__(self, master, on_close=None):
+        from . import dashboard, replica
         super().__init__(master)
-        self.title("TS-2000 — Display")
-        self.geometry("1000x330")
-        self.minsize(400, 140)
+        self.dashboard = dashboard
+        self.replica = replica
+        self.title("PT2VHF Prog Tool — TS-2000 em tempo real")
+        self.geometry("1270x300")
+        self.minsize(480, 240)
         self.on_close_cb = on_close
-        self.lcd = LcdCanvas(self)
-        self.lcd.pack(fill="both", expand=True)
-        self.v_theme = tk.StringVar(value=self.lcd.theme_name)
+        self.last = RadioStatus()
+        self.view = None
+        self.v_style = tk.StringVar(value="replica")
+        self.v_theme = tk.StringVar(value="TS-2000 original")
         self.v_top = tk.BooleanVar(value=False)
         self.menu = tk.Menu(self, tearoff=False)
-        for name in THEMES:
-            self.menu.add_radiobutton(label=name, variable=self.v_theme,
-                                      value=name,
-                                      command=lambda: self.lcd.set_theme(
-                                          self.v_theme.get()))
-        self.menu.add_separator()
-        self.menu.add_checkbutton(label="Sempre no topo", variable=self.v_top,
-                                  command=lambda: self.attributes(
-                                      "-topmost", self.v_top.get()))
-        self.menu.add_command(label="Tela cheia (F11)",
-                              command=self.toggle_fullscreen)
         self.bind("<Button-3>", self._popup)
         self.bind("<Button-2>", self._popup)
         self.bind("<F11>", lambda e: self.toggle_fullscreen())
         self.bind("<Escape>", lambda e: self.attributes("-fullscreen", False))
         self.protocol("WM_DELETE_WINDOW", self.close)
+        self._set_style()
+
+    def _set_style(self) -> None:
+        if self.view is not None:
+            self.view.destroy()
+        if self.v_style.get() == "replica":
+            themes = self.replica.THEMES
+            if self.v_theme.get() not in themes:
+                self.v_theme.set("TS-2000 original")
+            self.view = self.replica.Ts2000Replica(self, self.v_theme.get())
+        elif self.v_style.get() == "painel":
+            themes = self.dashboard.THEMES
+            if self.v_theme.get() not in themes:
+                self.v_theme.set("Escuro")
+            self.view = self.dashboard.Dashboard(self, self.v_theme.get())
+        else:
+            themes = THEMES
+            if self.v_theme.get() not in themes:
+                self.v_theme.set("Âmbar (TS-2000)")
+            self.view = LcdCanvas(self, self.v_theme.get())
+        self.view.pack(fill="both", expand=True)
+        self.view.update_status(self.last)
+        m = self.menu
+        m.delete(0, "end")
+        m.add_radiobutton(label="Réplica do display do TS-2000",
+                          variable=self.v_style, value="replica",
+                          command=self._set_style)
+        m.add_radiobutton(label="Painel completo (todos os dados)",
+                          variable=self.v_style,
+                          value="painel", command=self._set_style)
+        m.add_radiobutton(label="LCD clássico", variable=self.v_style,
+                          value="lcd", command=self._set_style)
+        m.add_separator()
+        for name in themes:
+            m.add_radiobutton(label=f"Tema: {name}", variable=self.v_theme,
+                              value=name, command=lambda: self.view.set_theme(
+                                  self.v_theme.get()))
+        m.add_separator()
+        m.add_checkbutton(label="Sempre no topo", variable=self.v_top,
+                          command=lambda: self.attributes(
+                              "-topmost", self.v_top.get()))
+        m.add_command(label="Tela cheia (F11)",
+                      command=self.toggle_fullscreen)
 
     def _popup(self, event) -> None:
         self.menu.tk_popup(event.x_root, event.y_root)
@@ -262,7 +298,12 @@ class DisplayWindow(tk.Toplevel):
         self.attributes("-fullscreen", not self.attributes("-fullscreen"))
 
     def update_status(self, st: RadioStatus) -> None:
-        self.lcd.update_status(st)
+        self.last = st
+        self.view.update_status(st)
+
+    @property
+    def lcd(self):
+        return self.view
 
     def close(self) -> None:
         if self.on_close_cb:
