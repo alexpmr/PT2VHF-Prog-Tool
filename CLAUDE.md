@@ -16,8 +16,11 @@ pacotes → publicar.
   2. `packaging/release.sh` (Windows via Wine + Linux + página do site).
      Requer a chave de assinatura em `~/.pt2vhf/chave-atualizacao.key`
      (nunca commitar; o mantenedor guarda o arquivo).
-  3. Crie a tag `vX.Y.Z` e a Release no GitHub com os arquivos de
-     `dist/site/` anexados.
-  4. Publique `dist/site/` na pasta `/progtool/` do site www.pt2vhf.com
-     (é de lá que o programa busca `atualizacao.json` para o OTA).
+  3. Publique no site: clone `alexpmr/PT2VHF-Site` (precisa de acesso de
+     escrita), rode `python3 packaging/site/publish_site.py <clone>` e, no
+     clone, `git pull --rebase origin main`, commit e `git push origin main`
+     (a Hostinger publica cada push; nunca use `--force`). O script copia os
+     pacotes para `downloads/prog-tool/` e atualiza `products.prog` do
+     `updates.json`, com a assinatura `sig` de cada pacote — é esse catálogo
+     que o programa consulta para o OTA. Siga também o README do site.
 - Interface e mensagens em português do Brasil.

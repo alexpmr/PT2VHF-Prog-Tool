@@ -311,49 +311,6 @@ footer { border-top: 1px solid var(--line); margin-top: 40px; padding: 24px 0 40
 """
 
 
-KEY_PATH = os.environ.get("PT2VHF_SIGNING_KEY", os.path.join(
-    os.path.expanduser("~"), ".pt2vhf", "chave-atualizacao.key"))
-NOTES = os.path.join(ROOT, "packaging", "site", "novidades.txt")
-
-
-def write_manifest(info: dict) -> None:
-    """Gera atualizacao.json e a assinatura Ed25519 (atualizacao.json.sig)."""
-    import base64
-    import json
-    import sys
-    sys.path.insert(0, ROOT)
-    from common import ed25519
-    from common.updater import APP_ID, PUBLIC_KEY
-    if not os.path.isfile(KEY_PATH):
-        raise SystemExit(f"Chave de assinatura não encontrada: {KEY_PATH}\n"
-                         "(defina PT2VHF_SIGNING_KEY com o caminho do arquivo)")
-    with open(KEY_PATH, encoding="ascii") as fh:
-        key = base64.b64decode(fh.read().strip())
-    if ed25519.public_key(key) != PUBLIC_KEY:
-        raise SystemExit("A chave de assinatura não corresponde à chave "
-                         "pública embutida em common/updater.py")
-    notes = []
-    if os.path.isfile(NOTES):
-        with open(NOTES, encoding="utf-8") as fh:
-            notes = [ln.strip("-• \n") for ln in fh if ln.strip()]
-    kinds = {"win": "windows-instalador", "winzip": "windows-portatil",
-             "deb": "deb", "tgz": "tgz"}
-    manifest = {
-        "app": APP_ID, "version": VERSION,
-        "date": datetime.date.today().isoformat(), "notes": notes,
-        "page": "./",
-        "files": {kinds[k]: {"file": v["name"], "sha256": v["sha"],
-                             "size": os.path.getsize(os.path.join(SITE,
-                                                                  v["name"]))}
-                  for k, v in info.items() if k in kinds},
-    }
-    data = json.dumps(manifest, ensure_ascii=False, indent=1).encode("utf-8")
-    with open(os.path.join(SITE, "atualizacao.json"), "wb") as fh:
-        fh.write(data)
-    with open(os.path.join(SITE, "atualizacao.json.sig"), "w") as fh:
-        fh.write(base64.b64encode(ed25519.sign(key, data)).decode() + "\n")
-
-
 def build() -> None:
     info = prepare()
     page = PAGE
@@ -372,7 +329,6 @@ def build() -> None:
         raise SystemExit(f"Marcadores não substituídos: {leftover}")
     with open(os.path.join(SITE, "index.html"), "w", encoding="utf-8") as fh:
         fh.write(page)
-    write_manifest(info)
     out = os.path.join(DIST, "site.zip")
     with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as z:
         for dirpath, _, files in os.walk(SITE):

@@ -1,13 +1,16 @@
 """Atualização automática a partir do site www.pt2vhf.com.
 
-O site publica, na pasta do programa:
-    atualizacao.json      versão, novidades e arquivos (com SHA-256)
-    atualizacao.json.sig  assinatura Ed25519 do arquivo acima (base64)
+O site publica o catálogo https://www.pt2vhf.com/updates.json (a única
+fonte de versões, compartilhada por todos os programas PT2VHF). Este
+programa lê `products.prog`: versão, data, novidades e a lista de arquivos
+(categoria, URL absoluta em www.pt2vhf.com/downloads/prog-tool/, tamanho e
+SHA-256).
 
-O programa só aceita o arquivo se a assinatura conferir com a chave pública
-embutida abaixo; depois confere o SHA-256 de cada pacote baixado. Assim,
-mesmo que o site seja invadido, ninguém consegue distribuir um instalador
-falso sem a chave privada (que fica só com o mantenedor).
+Segurança: cada arquivo traz o campo `sig`, uma assinatura Ed25519 de
+"pt2vhf-prog-tool|<versão>|<arquivo>|<sha256>" feita com a chave privada do
+mantenedor. O programa só instala um pacote se a assinatura conferir com a
+chave pública embutida abaixo e se o SHA-256 baixado bater. Assim, mesmo que
+o site seja invadido, ninguém consegue distribuir um instalador falso.
 
 O endereço pode ser trocado com a variável de ambiente PT2VHF_UPDATE_URL
 (usada nos testes).
@@ -31,7 +34,9 @@ from dataclasses import dataclass, field
 
 from . import ed25519
 
-UPDATE_URL = "https://www.pt2vhf.com/progtool/atualizacao.json"
+UPDATE_URL = "https://www.pt2vhf.com/updates.json"
+PRODUCT = "prog"
+SITE_HOSTS = ("www.pt2vhf.com", "pt2vhf.com")
 PUBLIC_KEY = base64.b64decode("IT4pnH5Zs131x6l9l+0JbckmWiU9C1UQPMQYuctxf8U=")
 APP_ID = "pt2vhf-prog-tool"
 CHECK_INTERVAL = 24 * 3600
@@ -124,45 +129,88 @@ def auto_check_due(cfg: dict) -> bool:
 
 # -------------------------------------------------------------- consulta
 
-def parse_manifest(data: bytes, signature_b64: bytes, base_url: str,
-                   public_key: bytes | None = None) -> UpdateInfo:
+# categorias do updates.json -> tipo de instalação deste programa
+CATEGORIES = {"windows-installer": "windows-instalador",
+              "windows-portable": "windows-portatil",
+              "linux-deb": "deb", "linux-targz": "tgz"}
+
+
+def signed_text(version: str, name: str, sha256: str) -> bytes:
+    """Texto assinado para cada arquivo publicado."""
+    return f"{APP_ID}|{version}|{name}|{sha256.lower()}".encode("utf-8")
+
+
+def _check_host(url: str) -> None:
+    """Pacotes só são aceitos do próprio site (ou do endereço de teste)."""
+    _check_scheme(url)
+    host = urllib.parse.urlparse(url).hostname
+    test = urllib.parse.urlparse(os.environ.get("PT2VHF_UPDATE_URL", ""))
+    if host not in SITE_HOSTS and host != test.hostname:
+        raise UpdateError(f"Arquivo fora do site recusado: {url}")
+
+
+def parse_catalog(data: bytes, base_url: str) -> UpdateInfo:
+    """Lê products.prog do updates.json do site."""
     try:
-        sig = base64.b64decode(signature_b64.strip(), validate=True)
-    except ValueError:
-        raise UpdateError("Assinatura em formato inválido") from None
-    if not ed25519.verify(public_key or PUBLIC_KEY, data, sig):
-        raise UpdateError("Assinatura do arquivo de atualização não confere; "
-                          "atualização recusada")
-    try:
-        m = json.loads(data.decode("utf-8"))
-        if m.get("app") != APP_ID:
-            raise UpdateError("Arquivo de atualização de outro programa")
+        cat = json.loads(data.decode("utf-8"))
+        p = cat["products"][PRODUCT]
+        version = p.get("version")
+        if not version:
+            raise UpdateError("O site ainda não publicou uma versão")
+        parse_version(version)
         files = {}
-        for key, f in m.get("files", {}).items():
-            url = urllib.parse.urljoin(base_url, f["file"])
-            _check_scheme(url)
-            files[key] = {"url": url, "sha256": f["sha256"].lower(),
-                          "size": int(f.get("size", 0)),
-                          "name": os.path.basename(f["file"])}
+        for f in p.get("files", []):
+            kind = CATEGORIES.get(f.get("category"))
+            if not kind:
+                continue
+            url = urllib.parse.urljoin(base_url, f["url"])
+            files[kind] = {"url": url, "sha256": str(f["sha256"]).lower(),
+                           "size": int(f.get("size", 0)),
+                           "name": str(f["name"]),
+                           "sig": f.get("sig"), "version": str(version)}
+        notes = p.get("notes") or ""
+        if isinstance(notes, str):
+            notes = [n.strip() for n in notes.split("\n") if n.strip()]
         return UpdateInfo(
-            version=str(m["version"]), date=str(m.get("date", "")),
-            notes=[str(n) for n in m.get("notes", [])],
-            page=urllib.parse.urljoin(base_url, m.get("page", "./")),
+            version=str(version), date=str(p.get("date") or ""),
+            notes=[str(n) for n in notes],
+            page=urllib.parse.urljoin(base_url, p.get("page") or "./"),
             files=files)
+    except UpdateError:
+        raise
     except (KeyError, TypeError, ValueError, AttributeError) as e:
-        raise UpdateError(f"Arquivo de atualização inválido: {e}") from None
+        raise UpdateError(f"Catálogo de atualizações inválido: {e}") from None
+
+
+def verify_entry(entry: dict, public_key: bytes | None = None) -> None:
+    """Confere a assinatura do arquivo antes de baixá-lo/instalá-lo."""
+    _check_host(entry["url"])
+    sig = entry.get("sig")
+    if not sig:
+        raise UpdateError("Este pacote não tem assinatura; por segurança a "
+                          "atualização automática foi recusada. Baixe pelo "
+                          "site.")
+    try:
+        raw = base64.b64decode(sig, validate=True)
+    except ValueError:
+        raise UpdateError("Assinatura do pacote em formato inválido") \
+            from None
+    if not ed25519.verify(public_key or PUBLIC_KEY,
+                          signed_text(entry["version"], entry["name"],
+                                      entry["sha256"]), raw):
+        raise UpdateError("A assinatura do pacote não confere; atualização "
+                          "recusada")
 
 
 def check(timeout: float = 15) -> UpdateInfo:
     url = update_url()
     try:
         data = _fetch(url, timeout)
-        sig = _fetch(url + ".sig", timeout, limit=4096)
     except UpdateError:
         raise
     except Exception as e:      # rede, DNS, HTTP, certificado...
         raise UpdateError(f"Não foi possível consultar {url}: {e}") from None
-    return parse_manifest(data, sig, url)
+    return parse_catalog(data, url)
 
 
 # ------------------------------------------------------- tipo de instalação
@@ -188,7 +236,8 @@ def downloads_dir() -> str:
 
 def download(entry: dict, dest_dir: str, progress=None,
              cancel: threading.Event | None = None) -> str:
-    """Baixa o pacote e confere o SHA-256. Devolve o caminho."""
+    """Confere a assinatura, baixa e confere o SHA-256. Devolve o caminho."""
+    verify_entry(entry)
     dest = os.path.join(dest_dir, entry["name"])
     tmp = dest + ".parcial"
     h = hashlib.sha256()
