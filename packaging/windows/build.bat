@@ -16,7 +16,7 @@ python -m PyInstaller --noconfirm --clean --distpath dist --workpath build\pyins
 
 set MAKENSIS=makensis
 where makensis >nul 2>nul || set MAKENSIS="%ProgramFiles(x86)%\NSIS\makensis.exe"
-%MAKENSIS% -DVERSION=%VERSION% packaging\windows\installer.nsi || goto :erro
+%MAKENSIS% /NOCD -DVERSION=%VERSION% packaging\windows\installer.nsi || goto :erro
 
 echo.
 echo Pronto: dist\PT2VHFProgTool-%VERSION%-instalador.exe

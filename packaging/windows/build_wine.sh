@@ -43,7 +43,7 @@ WINEPATH='C:\mc\Library\bin;C:\mc' wine 'C:\mc\python.exe' -m PyInstaller \
   packaging/windows/pt2vhf-prog-tool.spec </dev/null | cat
 
 echo ">> NSIS"
-makensis -V2 -DVERSION="$VERSION" packaging/windows/installer.nsi
+makensis -V2 -NOCD -DVERSION="$VERSION" packaging/windows/installer.nsi
 echo ">> Versão portátil"
 PORT="dist/PT2VHFProgTool-$VERSION-windows-portatil.zip"
 rm -rf "dist/PT2VHF Prog Tool" "$PORT"

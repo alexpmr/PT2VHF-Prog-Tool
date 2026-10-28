@@ -49,7 +49,7 @@ jobs:
       - name: NSIS
         shell: bash
         run: |
-          "/c/Program Files (x86)/NSIS/makensis.exe" -DVERSION=${{ steps.ver.outputs.version }} packaging/windows/installer.nsi > nsis.log 2>&1 || {
+          "/c/Program Files (x86)/NSIS/makensis.exe" -NOCD -DVERSION=${{ steps.ver.outputs.version }} packaging/windows/installer.nsi > nsis.log 2>&1 || {
             tail -n 25 nsis.log | sed 's/^/::error title=NSIS::/'; exit 1; }
           ls -la dist
       - uses: actions/upload-artifact@v4

@@ -1,6 +1,7 @@
-; Instalador do PT2VHF Prog Tool (NSIS 3).
-; Compile depois do PyInstaller, na raiz do projeto:
-;   makensis -DVERSION=1.1.0 packaging/windows/installer.nsi
+﻿; Instalador do PT2VHF Prog Tool (NSIS 3).
+; Compile depois do PyInstaller, na raiz do projeto, sem trocar de pasta:
+;   makensis -NOCD -DVERSION=X.Y.Z packaging/windows/installer.nsi
+; (no Windows: makensis /NOCD ...). Opcional: -DROOT=<raiz do projeto>.
 
 Unicode true
 !include "MUI2.nsh"
@@ -13,10 +14,13 @@ Unicode true
 !define APPNAME "PT2VHF Prog Tool"
 !define APPEXE "PT2VHFProgTool.exe"
 !define REGKEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\PT2VHFProgTool"
-!define SRCDIR "../../dist/PT2VHFProgTool"
+!ifndef ROOT
+  !define ROOT "${__FILEDIR__}/../.."
+!endif
+!define SRCDIR "${ROOT}/dist/PT2VHFProgTool"
 
 Name "${APPNAME} ${VERSION}"
-OutFile "../../dist/PT2VHFProgTool-${VERSION}-instalador.exe"
+OutFile "${ROOT}/dist/PT2VHFProgTool-${VERSION}-instalador.exe"
 InstallDir "$PROGRAMFILES64\PT2VHF Prog Tool"
 InstallDirRegKey HKLM "Software\PT2VHFProgTool" "InstallDir"
 RequestExecutionLevel admin
@@ -30,8 +34,8 @@ VIAddVersionKey /LANG=1046 "FileVersion" "${VERSION}"
 VIAddVersionKey /LANG=1046 "ProductVersion" "${VERSION}"
 VIAddVersionKey /LANG=1046 "LegalCopyright" "GPLv3"
 
-!define MUI_ICON "../../assets/app.ico"
-!define MUI_UNICON "../../assets/app.ico"
+!define MUI_ICON "${ROOT}/assets/app.ico"
+!define MUI_UNICON "${ROOT}/assets/app.ico"
 !define MUI_ABORTWARNING
 !define MUI_WELCOMEPAGE_TEXT "Este assistente instalará o ${APPNAME} ${VERSION}.$\r$\n$\r$\nProgramação do Kenwood TS-2000 (memórias, menus e display em tempo real) e dos Icom ID-51A Plus2 e ID-880H.$\r$\n$\r$\nClique em Próximo para continuar."
 !define MUI_FINISHPAGE_RUN "$INSTDIR\${APPEXE}"
@@ -88,7 +92,7 @@ Section "Programa (obrigatório)" SecMain
   RMDir /r "$INSTDIR\_internal"
   SetOutPath "$INSTDIR"
   File /r "${SRCDIR}/*.*"
-  File "/oname=LICENCA.txt" "../../LICENSE"
+  File "/oname=LICENCA.txt" "${ROOT}/LICENSE"
   WriteUninstaller "$INSTDIR\Desinstalar.exe"
 
   CreateDirectory "$SMPROGRAMS\${APPNAME}"
