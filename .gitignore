@@ -4,3 +4,4 @@ __pycache__/
 *.icf
 dist/
 build/
+*.key

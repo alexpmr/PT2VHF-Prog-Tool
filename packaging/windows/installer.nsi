@@ -5,6 +5,7 @@
 Unicode true
 !include "MUI2.nsh"
 !include "x64.nsh"
+!include "FileFunc.nsh"
 
 !ifndef VERSION
   !define VERSION "1.2.0"
@@ -66,6 +67,15 @@ Section "-RemoverVersaoAntiga"
     RMDir "$R0"
   fim:
 SectionEnd
+
+; atualização automática: "instalador.exe /S /AUTOSTART" reabre o programa
+Function .onInstSuccess
+  ${GetParameters} $R0
+  ClearErrors
+  ${GetOptions} $R0 "/AUTOSTART" $R1
+  IfErrors +2
+    Exec '"$INSTDIR\${APPEXE}"'
+FunctionEnd
 
 Function un.onInit
   SetRegView 64

@@ -58,7 +58,44 @@ class Launcher(tk.Tk):
         self._set_icon()
         self.windows: dict[str, tk.Toplevel] = {}
         self.page: tk.Frame | None = None
+        self._build_footer()
         self.show_home()
+        self.after(1500, self._auto_check)
+
+    def _build_footer(self) -> None:
+        from . import __version__
+        from common import updater
+        foot = tk.Frame(self, bg=BG)
+        foot.pack(side="bottom", fill="x", padx=24, pady=(0, 10))
+        tk.Label(foot, text=f"Versão {__version__}", bg=BG, fg=MUTED,
+                 font=(UI_FONT, 9)).pack(side="left")
+        link = tk.Label(foot, text="Verificar atualizações", bg=BG,
+                        fg="#1d4f91", cursor="hand2",
+                        font=(UI_FONT, 9, "underline"))
+        link.pack(side="left", padx=12)
+        link.bind("<Button-1>", lambda e: self.check_updates(True))
+        self.v_auto = tk.BooleanVar(
+            value=updater.load_config().get("auto_update", True))
+        tk.Checkbutton(foot, text="Verificar automaticamente",
+                       variable=self.v_auto, bg=BG, fg=MUTED,
+                       activebackground=BG, highlightthickness=0,
+                       font=(UI_FONT, 9),
+                       command=self._toggle_auto).pack(side="left")
+
+    def _toggle_auto(self) -> None:
+        from common import updater
+        cfg = updater.load_config()
+        cfg["auto_update"] = self.v_auto.get()
+        updater.save_config(cfg)
+
+    def _auto_check(self) -> None:
+        from common import updater
+        if updater.auto_check_due(updater.load_config()):
+            self.check_updates(False)
+
+    def check_updates(self, manual: bool) -> None:
+        from common.update_ui import check_async
+        check_async(self, manual)
 
     def _set_icon(self) -> None:
         """Ícone de todas as janelas (.ico no Windows, PNG nos demais)."""
