@@ -17,6 +17,23 @@ TEXT = "#1d2433"
 MUTED = "#5d6678"
 
 
+# Fabricantes e rádios da tela inicial. Para incluir um rádio, acrescente
+# (chave, modelo, descrição, tamanho da figura) na lista do fabricante e
+# trate a chave em Launcher.open_radio.
+BRANDS = {
+    "kenwood": ("Kenwood", "Transceptores HF/VHF/UHF", [
+        ("ts2000", "TS-2000",
+         "Memórias, menus e display em tempo real (CAT serial)", (260, 130)),
+    ]),
+    "icom": ("ICOM", "Portáteis e móveis D-STAR", [
+        ("id51plus2", "ID-51A Plus2",
+         "Portátil D-STAR VHF/UHF — 500 memórias", (200, 150)),
+        ("id880h", "ID-880H", "Móvel D-STAR VHF/UHF — 1000 memórias",
+         (200, 150)),
+    ]),
+}
+
+
 class Card(tk.Frame):
     """Botão grande com imagem, título e descrição."""
 
@@ -141,28 +158,31 @@ class Launcher(tk.Tk):
     def show_home(self) -> None:
         body = self._new_page("PT2VHF Prog Tool",
                               "Escolha o fabricante do rádio")
-        Card(body, "kenwood", "Kenwood", "Transceptores HF/VHF/UHF",
-             self.show_kenwood).grid(row=0, column=0, padx=16, pady=16)
-        Card(body, "icom", "ICOM", "Portáteis e móveis D-STAR",
-             self.show_icom).grid(row=0, column=1, padx=16, pady=16)
+        for col, (key, (name, sub, _)) in enumerate(BRANDS.items()):
+            Card(body, key, name, sub,
+                 lambda k=key: self.show_brand(k)).grid(
+                row=0, column=col, padx=16, pady=16)
 
+    def show_brand(self, brand: str) -> None:
+        name, _, radios = BRANDS[brand]
+        body = self._new_page(name, "Escolha o rádio", back=True)
+        for i, (key, model, sub, size) in enumerate(radios):
+            r, c = divmod(i, 3)
+            Card(body, key, model, sub, lambda k=key: self.open_radio(k),
+                 pic_size=size).grid(row=r, column=c, padx=16, pady=16)
+
+    # compatibilidade
     def show_kenwood(self) -> None:
-        body = self._new_page("Kenwood", "Rádios suportados", back=True)
-        Card(body, "ts2000", "TS-2000",
-             "Memórias, menus e display em tempo real (CAT serial)",
-             self.open_ts2000, pic_size=(260, 130)).grid(row=0, column=0,
-                                                         padx=16, pady=16)
+        self.show_brand("kenwood")
 
     def show_icom(self) -> None:
-        body = self._new_page("ICOM", "Rádios suportados", back=True)
-        Card(body, "id51plus2", "ID-51A Plus2",
-             "Portátil D-STAR VHF/UHF — 500 memórias",
-             lambda: self.open_icom("id51plus2"),
-             pic_size=(200, 150)).grid(row=0, column=0, padx=16, pady=16)
-        Card(body, "id880h", "ID-880H",
-             "Móvel D-STAR VHF/UHF — 1000 memórias",
-             lambda: self.open_icom("id880h"),
-             pic_size=(200, 150)).grid(row=0, column=1, padx=16, pady=16)
+        self.show_brand("icom")
+
+    def open_radio(self, key: str) -> None:
+        if key == "ts2000":
+            self.open_ts2000()
+        else:
+            self.open_icom(key)
 
     # --------------------------------------------------------- editores
     def _open(self, key: str, factory) -> None:
