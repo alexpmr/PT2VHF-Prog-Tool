@@ -91,7 +91,7 @@ Section "Programa (obrigatório)" SecMain
   ; remove arquivos de uma versão anterior antes de copiar
   RMDir /r "$INSTDIR\_internal"
   SetOutPath "$INSTDIR"
-  File /r "${SRCDIR}/*.*"
+  File /r "${SRCDIR}\*.*"
   File "/oname=LICENCA.txt" "${ROOT}/LICENSE"
   WriteUninstaller "$INSTDIR\Desinstalar.exe"
 
