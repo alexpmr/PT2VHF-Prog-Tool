@@ -438,8 +438,8 @@ class App(tk.Toplevel):
                    command=self.menu_write_selected).pack(side="left", padx=2)
         ttk.Button(bar, text="Varrer menus...", command=self.scan_menus).pack(
             side="left", padx=2)
-        ttk.Label(bar, text="✓ = índice confirmado; demais: conferir com o "
-                  "manual do rádio", foreground="gray").pack(side="right")
+        ttk.Label(bar, text="Tabela conforme o manual do TS-2000",
+                  foreground="gray").pack(side="right")
         tvf = ttk.Frame(fmn)
         tvf.pack(fill="both", expand=True)
         cols = [("label", "Menu", 60), ("name", "Descrição", 380),

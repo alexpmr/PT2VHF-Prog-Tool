@@ -273,7 +273,7 @@ footer { border-top: 1px solid var(--line); margin-top: 40px; padding: 24px 0 40
       Este é um programa novo, testado com rádios simulados e comparado com o CHIRP, mas ainda não com todos os rádios reais.
       <ul>
         <li><b>Faça backup primeiro:</b> leia o rádio e salve o arquivo (<code>.ts2k</code> no TS-2000, <code>.icf</code> nos Icom) antes da primeira gravação.</li>
-        <li><b>Menus do TS-2000:</b> só os menus marcados com ✓ têm o comando confirmado. Confira os demais com o manual antes de gravar menus em massa.</li>
+        <li><b>Menus do TS-2000:</b> a tabela segue o manual do rádio; leia e salve o backup antes de gravar menus em massa.</li>
         <li><b>Icom:</b> a clonagem grava a memória inteira do rádio. Use sempre uma imagem lida do próprio rádio ou um <code>.icf</code> do mesmo modelo.</li>
       </ul>
     </div>

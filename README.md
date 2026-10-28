@@ -183,26 +183,16 @@ Hamlib (`rigs/kenwood/ts2000.c`) e do CHIRP (`drivers/ts2000.py`). Depois de
 cada gravação, o app envia `ID;` para sincronizar e detectar respostas de
 erro (`?;`, `E;`, `O;`). Ele tenta de novo automaticamente até 3 vezes.
 
-## ⚠️ Sobre a tabela de menus do TS-2000
+## Tabela de menus do TS-2000
 
-Os índices `EX` dos menus 12, 13, 20, 21, 22 e 31 foram confirmados em
-software de terceiros (Hamlib e flrig) e aparecem com ✓. Os demais seguem a
-numeração do painel do rádio e as descrições do manual. **Confira-os com o
-manual de comandos do seu rádio antes de gravar menus em massa.** Em especial:
+A tabela de menus (00 a 62, com os sub-menus A, B, C...) e os valores de
+cada um seguem o manual do TS-2000 (lista de menus e tabela de parâmetros
+do comando `EX`). Nos sub-menus, o comando usa `P2 = 01` para A, `02` para
+B etc.; menus sem sub-menu usam `00`. Antes de gravar menus em massa pela
+primeira vez, faça **Ler do rádio** e salve o projeto como backup.
 
-- Para os sub-menus (ex.: 06A/06B), o app supõe que o sub-menu vai no campo
-  `ss` (A = 00, B = 01…). Use **Menus › Varrer menus** com sub-menus para ver
-  o que o seu rádio realmente aceita.
-- Vários menus aparecem como "Menu NN" com valor bruto, porque não incluí
-  descrições sem uma fonte confiável.
-
-Para corrigir ou completar a tabela, use **Menus › Exportar definições**,
-edite o JSON (nomes, `ex`, `sub` e `options`) e salve como
-`menus_ts2000.json` na pasta do programa ou em `~/.ts2000prog/`. Esse arquivo
-é carregado automaticamente e substitui a tabela interna.
-
-Recomendação: antes de gravar menus pela primeira vez, faça **Ler do rádio**
-e salve o projeto como backup.
+Para personalizar, use **Menus › Exportar definições**, edite o JSON e
+salve como `menus_ts2000.json` na pasta do programa ou em `~/.ts2000prog/`.
 
 ## Como os formatos Icom foram verificados
 

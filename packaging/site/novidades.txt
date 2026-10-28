@@ -2,3 +2,4 @@ Atualização automática: o programa avisa quando há versão nova no site pt2v
 Display em tempo real do TS-2000 redesenhado, com mais informações do rádio
 Fotos reais do TS-2000, ID-51A Plus2 e ID-880H na tela inicial
 Tela inicial organizada por fabricante, pronta para novos rádios
+Tabela de menus do TS-2000 completa (00 a 62 e sub-menus), conferida com o manual do rádio

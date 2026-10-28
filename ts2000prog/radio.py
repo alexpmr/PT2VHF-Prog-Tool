@@ -343,9 +343,12 @@ class TS2000:
                         found[P.menu_key(ex, sub)] = \
                             P.parse_menu_reply(reply)[2]
                     except RadioError:
-                        if sub == subs.start:
-                            done += len(subs) - 1
-                            break       # menu inexistente: pula os subs
+                        # menus com sub-menu (06A...) não respondem no 00;
+                        # sem resposta no 00 nem no 01, o menu não existe
+                        if sub == subs.start + 1 and \
+                                P.menu_key(ex, subs.start) not in found:
+                            done += len(subs) - 2
+                            break
         finally:
             link.timeout = old_timeout
         progress(total, total, f"{len(found)} menus encontrados")
