@@ -27,7 +27,7 @@ class UpdaterTests(unittest.TestCase):
         self.srv = http.server.ThreadingHTTPServer(("127.0.0.1", 0), h)
         threading.Thread(target=self.srv.serve_forever, daemon=True).start()
         self.base = f"http://127.0.0.1:{self.srv.server_port}/"
-        os.environ["PT2VHF_UPDATE_URL"] = self.base + "updates.json"
+        os.environ["PT2VHF_UPDATE_URL"] = self.base + "update.php?product=prog"
         self.orig_key = U.PUBLIC_KEY
         U.PUBLIC_KEY = PUB
 
@@ -45,13 +45,15 @@ class UpdaterTests(unittest.TestCase):
         if sign:
             entry["sig"] = base64.b64encode(ed25519.sign(
                 key, U.signed_text(version, "p.tar.gz", digest))).decode()
-        cat = {"schema": 1, "updated": "2026-10-28", "products": {
-            "prog": {"name": "PT2VHF Prog Tool", "version": version,
-                     "date": "2026-10-28", "notes": "a\nb",
-                     "page": "https://www.pt2vhf.com/#prog",
-                     "files": [entry]},
-            "mesh": {"name": "x", "version": None, "files": []}}}
-        with open(os.path.join(self.dir, "updates.json"), "w") as fh:
+        # mesmo formato devolvido pelo update.php do site
+        cat = {"schema": 1, "source": "https://www.pt2vhf.com",
+               "product": "prog",
+               "status": "available" if version else "unpublished",
+               "version": version or None, "date": "2026-10-28",
+               "notes": "a; b", "page": "https://www.pt2vhf.com/prog",
+               "files": [dict(entry, kind="tar.gz", platform="")]
+               if version else []}
+        with open(os.path.join(self.dir, "update.php"), "w") as fh:
             json.dump(cat, fh)
 
     def test_check_and_download(self):

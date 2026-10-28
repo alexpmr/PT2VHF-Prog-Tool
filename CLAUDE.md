@@ -23,4 +23,10 @@ pacotes → publicar.
      pacotes para `downloads/prog-tool/` e atualiza `products.prog` do
      `updates.json`, com a assinatura `sig` de cada pacote — é esse catálogo
      que o programa consulta para o OTA. Siga também o README do site.
+- Mensagens que começam com **"Roadmap:"** ou **"Backlog:"** só registram o
+  item no `BACKLOG.md`; implementar apenas no pedido de versão nova, que
+  começa resolvendo todos os pendentes do `BACKLOG.md`.
+- Atualizações: o programa consulta
+  `https://www.pt2vhf.com/update.php?product=prog`; downloads só pelo site
+  (`downloads/prog-tool/`, contados pelo `download.php`).
 - Interface e mensagens em português do Brasil.

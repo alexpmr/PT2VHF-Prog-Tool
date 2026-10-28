@@ -1,0 +1,17 @@
+# Backlog — PT2VHF Prog Tool
+
+Mensagens do mantenedor que começam com **"Roadmap:"** ou **"Backlog:"** são
+registradas aqui e só implementadas no próximo pedido de versão nova.
+
+## Pendentes
+
+(nenhum)
+
+## Concluídos na 1.3.0
+
+- Roadmap: display em tempo real do TS-2000 mais completo e fiel ao painel do
+  rádio (réplica no layout do manual + painel completo com todos os dados CAT).
+- Backlog: foto do ID-51A Plus2 como ícone na tela inicial.
+- Backlog: foto do ID-880H na tela inicial.
+- Backlog: foto do TS-2000 na tela inicial.
+- Tela inicial por fabricante (Kenwood → TS-2000), pronta para novos rádios.

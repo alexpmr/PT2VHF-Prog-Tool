@@ -1,10 +1,10 @@
 """Atualização automática a partir do site www.pt2vhf.com.
 
-O site publica o catálogo https://www.pt2vhf.com/updates.json (a única
-fonte de versões, compartilhada por todos os programas PT2VHF). Este
-programa lê `products.prog`: versão, data, novidades e a lista de arquivos
-(categoria, URL absoluta em www.pt2vhf.com/downloads/prog-tool/, tamanho e
-SHA-256).
+O programa consulta a API oficial do site,
+https://www.pt2vhf.com/update.php?product=prog, que lê o catálogo
+updates.json e devolve status, versão, data, novidades e os arquivos
+publicados fisicamente em www.pt2vhf.com/downloads/prog-tool/ (categoria,
+URL, tamanho e SHA-256). Os downloads passam pelo contador do site.
 
 Segurança: cada arquivo traz o campo `sig`, uma assinatura Ed25519 de
 "pt2vhf-prog-tool|<versão>|<arquivo>|<sha256>" feita com a chave privada do
@@ -22,6 +22,7 @@ import base64
 import hashlib
 import json
 import os
+import re
 import ssl
 import subprocess
 import sys
@@ -34,7 +35,7 @@ from dataclasses import dataclass, field
 
 from . import ed25519
 
-UPDATE_URL = "https://www.pt2vhf.com/updates.json"
+UPDATE_URL = "https://www.pt2vhf.com/update.php?product=prog"
 PRODUCT = "prog"
 SITE_HOSTS = ("www.pt2vhf.com", "pt2vhf.com")
 PUBLIC_KEY = base64.b64decode("IT4pnH5Zs131x6l9l+0JbckmWiU9C1UQPMQYuctxf8U=")
@@ -150,10 +151,17 @@ def _check_host(url: str) -> None:
 
 
 def parse_catalog(data: bytes, base_url: str) -> UpdateInfo:
-    """Lê products.prog do updates.json do site."""
+    """Lê a resposta do update.php (ou o products.prog do updates.json)."""
     try:
-        cat = json.loads(data.decode("utf-8"))
-        p = cat["products"][PRODUCT]
+        doc = json.loads(data.decode("utf-8"))
+        if "products" in doc:                   # updates.json direto
+            p = doc["products"][PRODUCT]
+        else:                                   # update.php
+            if doc.get("product") not in (None, PRODUCT):
+                raise UpdateError("Resposta de atualização de outro produto")
+            if doc.get("status") not in (None, "available"):
+                raise UpdateError("O site ainda não publicou uma versão")
+            p = doc
         version = p.get("version")
         if not version:
             raise UpdateError("O site ainda não publicou uma versão")
@@ -170,7 +178,8 @@ def parse_catalog(data: bytes, base_url: str) -> UpdateInfo:
                            "sig": f.get("sig"), "version": str(version)}
         notes = p.get("notes") or ""
         if isinstance(notes, str):
-            notes = [n.strip() for n in notes.split("\n") if n.strip()]
+            notes = [n.strip() for n in re.split(r"\n|;\s*", notes)
+                     if n.strip()]
         return UpdateInfo(
             version=str(version), date=str(p.get("date") or ""),
             notes=[str(n) for n in notes],
