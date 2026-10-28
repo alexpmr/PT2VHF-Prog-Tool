@@ -233,7 +233,7 @@ class DisplayWindow(tk.Toplevel):
         self.dashboard = dashboard
         self.replica = replica
         self.title("PT2VHF Prog Tool — TS-2000 em tempo real")
-        self.geometry("1270x300")
+        self.geometry("1400x250")
         self.minsize(480, 240)
         self.on_close_cb = on_close
         self.last = RadioStatus()
